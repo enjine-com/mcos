@@ -1,6 +1,5 @@
 import pytest
 from pypfopt import expected_returns, risk_models
-from pypfopt import expected_returns
 from pypfopt.efficient_frontier import EfficientFrontier
 
 from mcos.optimizer import MarkowitzOptimizer
