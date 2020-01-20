@@ -23,6 +23,5 @@ class TestMarkowitzOptimizer:
         
         assert actual_weights == expected_weights
 
-
     def test_name(self, optimizer):
         assert optimizer.name == 'markowitz'
