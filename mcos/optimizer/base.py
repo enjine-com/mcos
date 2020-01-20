@@ -3,6 +3,7 @@ import numpy as np
 
 
 class AbstractOptimizer(ABC):
+    """Helper class that provides a standard way to create a new Optimizer using inheritance"""
     
     @abstractmethod
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
