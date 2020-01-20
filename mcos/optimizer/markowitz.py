@@ -8,7 +8,9 @@ class MarkowitzOptimizer(AbstractOptimizer):
 
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         ef = EfficientFrontier(mu, cov)
-        return ef.max_sharpe()
+        weights = ef.max_sharpe()
+        
+        return np.array(list(weights.values()))
 
     @property
     def name(self) -> str:
