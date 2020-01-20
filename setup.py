@@ -17,7 +17,8 @@ setup(
   keywords='Monte Carlo convex optimization de-noising clustering shrinkage',
   install_requires=[
     'numpy',
-    'pandas'
+    'pandas',
+    'PyPortfolioOpt'
   ],
   classifiers=[
     'Development Status :: 3 - Alpha',
