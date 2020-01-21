@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
-class Optimizer(ABC):
+class AbstractOptimizer(ABC):
+    """Helper class that provides a standard way to create a new Optimizer using inheritance"""
+    
     @abstractmethod
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         """
@@ -14,8 +16,8 @@ class Optimizer(ABC):
         """
         pass
 
-    @abstractmethod
     @property
+    @abstractmethod
     def name(self) -> str:
         """
         Name of this optimizer. The name will be displayed in the MCOS results DataFrame.
