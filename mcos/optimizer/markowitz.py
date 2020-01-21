@@ -9,7 +9,8 @@ class MarkowitzOptimizer(AbstractOptimizer):
 
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         ef = EfficientFrontier(mu, cov)
-        weights = ef.max_sharpe()
+        ef.max_sharpe()
+        weights = ef.clean_weights()
         
         return np.array(list(weights.values()))
 
