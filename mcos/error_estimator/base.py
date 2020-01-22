@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
-class ErrorEstimator(ABC):
+class AbstractErrorEstimator(ABC):
     @abstractmethod
     def estimate(self, allocation: np.array) -> float:
         """
