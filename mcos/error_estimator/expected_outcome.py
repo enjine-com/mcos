@@ -6,4 +6,7 @@ from mcos.error_estimator import AbstractErrorEstimator
 class ExpectedOutcomeErrorEstimator(AbstractErrorEstimator):
 
     def estimate(self, allocation: np.array) -> float:
-        pass
+        true_allocation = np.repeat(allocation.T, 1, axis=0)
+        estimation = (true_allocation - allocation).mean()
+        return estimation
+        
