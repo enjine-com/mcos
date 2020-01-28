@@ -19,8 +19,8 @@ def simulate_optimizations(obs_simulator: ObservationSimulator, n_sims: int, opt
 
         for optimizer in optimizers:
             allocation = optimizer.allocate(mu_hat, cov_hat)
-            optimal = optimal_allocation(mu_hat, cov_hat)
-            error_estimates[optimizer.name].append(error_estimator.estimate(allocation, optimal))
+            optimal_allocation = optimizer.allocate(obs_simulator.mu, obs_simulator.cov)
+            error_estimates[optimizer.name].append(error_estimator.estimate(allocation, optimal_allocation))
 
     return pd.DataFrame([
         {
@@ -29,11 +29,3 @@ def simulate_optimizations(obs_simulator: ObservationSimulator, n_sims: int, opt
             'stdev': np.std(error_estimator[optimizers.name])
         } for optimizer in optimizers
     ]).set_index('optimizer')
-
-
-def optimal_allocation(mu: np.array, cov: np.array):
-    inv = np.linalg.inv(cov)
-    ones = np.ones(shape=(inv.shape[0],1))
-    allocation = np.dot(inv,mu)
-    allocation /= np.dot(ones.T, allocation)
-    return allocation
