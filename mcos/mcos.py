@@ -1,14 +1,14 @@
 from typing import List
 
-from mcos.error_estimator.base import ErrorEstimator
+from mcos.error_estimator import AbstractErrorEstimator
 from mcos.observation_simulator.base import ObservationSimulator
-from mcos.optimizer.base import Optimizer
+from mcos.optimizer import AbstractOptimizer
 import numpy as np
 import pandas as pd
 
 
-def simulate_optimizations(obs_simulator: ObservationSimulator, n_sims: int, optimizers: List[Optimizer],
-             error_estimator: ErrorEstimator, de_noise: bool = True) -> pd.DataFrame:
+def simulate_optimizations(obs_simulator: ObservationSimulator, n_sims: int, optimizers: List[AbstractOptimizer],
+             error_estimator: AbstractErrorEstimator, de_noise: bool = True) -> pd.DataFrame:
     error_estimates = {optimizer.name: [] for optimizer in optimizers}
 
     for i in range(n_sims):
@@ -19,7 +19,10 @@ def simulate_optimizations(obs_simulator: ObservationSimulator, n_sims: int, opt
 
         for optimizer in optimizers:
             allocation = optimizer.allocate(mu_hat, cov_hat)
-            error_estimates[optimizer.name].append(error_estimator.estimate(allocation))
+            optimal_allocation = optimizer.allocate(obs_simulator.mu, obs_simulator.cov)
+            
+            estimation = error_estimator.estimate(obs_simulator.mu, obs_simulator.cov, allocation, optimal_allocation)
+            error_estimates[optimizer.name].append(estimation)
 
     return pd.DataFrame([
         {
