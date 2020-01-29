@@ -20,7 +20,9 @@ def simulate_optimizations(obs_simulator: ObservationSimulator, n_sims: int, opt
         for optimizer in optimizers:
             allocation = optimizer.allocate(mu_hat, cov_hat)
             optimal_allocation = optimizer.allocate(obs_simulator.mu, obs_simulator.cov)
-            error_estimates[optimizer.name].append(error_estimator.estimate(allocation, optimal_allocation))
+            
+            estimation = error_estimator.estimate(obs_simulator.mu, obs_simulator.cov, allocation, optimal_allocation)
+            error_estimates[optimizer.name].append(estimation)
 
     return pd.DataFrame([
         {
