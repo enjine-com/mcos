@@ -1,8 +1,9 @@
-from abc import ABC, abstractmethod
 import numpy as np
+from abc import ABC, abstractmethod
 
 
 class AbstractErrorEstimator(ABC):
+
     @abstractmethod
     def estimate(self, mu: np.array, cov: np.array, allocation: np.array, optimal_allocation: np.array) -> float:
         """

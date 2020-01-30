@@ -1,13 +1,13 @@
+import numpy as np
+import pandas as pd
 from typing import List
 
 from mcos.error_estimator import AbstractErrorEstimator
-from mcos.observation_simulator.base import ObservationSimulator
+from mcos.observation_simulator import AbstractObservationSimulator
 from mcos.optimizer import AbstractOptimizer
-import numpy as np
-import pandas as pd
 
 
-def simulate_optimizations(obs_simulator: ObservationSimulator, n_sims: int, optimizers: List[AbstractOptimizer],
+def simulate_optimizations(obs_simulator: AbstractObservationSimulator, n_sims: int, optimizers: List[AbstractOptimizer],
              error_estimator: AbstractErrorEstimator, de_noise: bool = True) -> pd.DataFrame:
     error_estimates = {optimizer.name: [] for optimizer in optimizers}
 

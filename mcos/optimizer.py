@@ -1,5 +1,6 @@
-from abc import ABC, abstractmethod
 import numpy as np
+from abc import ABC, abstractmethod
+from pypfopt.efficient_frontier import EfficientFrontier
 
 
 class AbstractOptimizer(ABC):
@@ -23,3 +24,18 @@ class AbstractOptimizer(ABC):
         Name of this optimizer. The name will be displayed in the MCOS results DataFrame.
         """
         pass
+
+
+class MarkowitzOptimizer(AbstractOptimizer):
+    """Optimizer based on the Modern Portfolio Theory pioneered by Harry Markowitz's paper 'Portfolio Selection'"""
+
+    def allocate(self, mu: np.array, cov: np.array) -> np.array:
+        ef = EfficientFrontier(mu, cov)
+        ef.max_sharpe()
+        weights = ef.clean_weights()
+        
+        return np.array(list(weights.values()))
+
+    @property
+    def name(self) -> str:
+        return 'markowitz'
