@@ -4,64 +4,64 @@ import numpy as np
 import pandas as pd
 
 
-def fitKDE(obs, bWidth=.25, kernel='gaussian', x=None):
+def fit_KDE(obs, b_width=.25, kernel='gaussian', x=None):
     # Fit kernel to a series of obs, and derive the prob of obs
     # x is the array of values on which the fit KDE will be evaluated
     if len(obs.shape) == 1:
         obs = obs.reshape(-1, 1)
-    kde = KernelDensity(kernel=kernel, bandwidth=bWidth).fit(obs)
+    kde = KernelDensity(kernel=kernel, bandwidth=b_width).fit(obs)
     if x is None:
         x = np.unique(obs).reshape(-1, 1)
     if len(x.shape) == 1:
         x = x.reshape(-1, 1)
-    logProb = kde.score_samples(x)  # log(density)
-    pdf = pd.Series(np.exp(logProb), index=x.flatten())
+    log_prob = kde.score_samples(x)  # log(density)
+    pdf = pd.Series(np.exp(log_prob), index=x.flatten())
     return pdf
 
 
 # ------------------------------------------------------------------------------
-def mpPDF(var, q, pts):
+def mp_PDF(var, q, pts):
     # Marcenko-Pastur pdf
     # q=T/N
-    eMin, eMax = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
-    eVal = np.linspace(eMin, eMax, pts)
-    pdf = q / (2 * np.pi * var * eVal) * ((eMax - eVal) * (eVal - eMin)) ** .5
-    pdf = pd.Series(pdf, index=eVal)
+    e_min, e_max = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
+    e_val = np.linspace(e_min, e_max, pts)
+    pdf = q / (2 * np.pi * var * e_val) * ((e_max - e_val) * (e_val - e_min)) ** .5
+    pdf = pd.Series(pdf, index=e_val)
     return pdf
 
 
 # ------------------------------------------------------------------------------
-def errPDFs(var, eVal, q, bWidth, pts=1000):
+def err_PDFs(var, e_val, q, b_width, pts=1000):
     # Fit error
-    pdf0 = mpPDF(var, q, pts)  # theoretical pdf
-    pdf1 = fitKDE(eVal, bWidth, x=pdf0.index.values)  # empirical pdf
+    pdf0 = mp_PDF(var, q, pts)  # theoretical pdf
+    pdf1 = fit_KDE(e_val, b_width, x=pdf0.index.values)  # empirical pdf
     sse = np.sum((pdf1 - pdf0) ** 2)
     return sse
 
 
 # ------------------------------------------------------------------------------
-def findMaxEval(eVal, q, bWidth):
-    # Find max random eVal by fitting Marcenko's dist to the empirical one
+def find_max_eval(e_val, q, b_width):
+    # Find max random e_val by fitting Marcenko's dist to the empirical one
     out = minimize(
-        lambda *x: errPDFs(*x),
+        lambda *x: err_PDFs(*x),
         .5,
-        args=(eVal, q, bWidth),
+        args=(e_val, q, b_width),
         bounds=((1E-5, 1 - 1E-5),)
     )
     if out['success']:
         var = out['x'][0]
     else:
         var = 1
-    eMax = var * (1 + (1. / q) ** .5) ** 2
-    return eMax, var
+    e_max = var * (1 + (1. / q) ** .5) ** 2
+    return e_max, var
 
 
-def corr2cov(corr, std):
+def corr_to_cov(corr, std):
     cov = corr * np.outer(std, std)
     return cov
 
 
-def cov2corr(cov):
+def cov_to_corr(cov):
     # Derive the correlation matrix from a covariance matrix
     std = np.sqrt(np.diag(cov))
     corr = cov / np.outer(std, std)
@@ -69,30 +69,30 @@ def cov2corr(cov):
     return corr
 
 
-def getPCA(matrix):
-    # Get eVal,eVec from a Hermitian matrix
-    eVal, eVec = np.linalg.eigh(matrix)
-    indices = eVal.argsort()[::-1]  # arguments for sorting eVal desc
-    eVal, eVec = eVal[indices], eVec[:, indices]
-    eVal = np.diagflat(eVal)
-    return eVal, eVec
+def get_PCA(matrix):
+    # Get e_val,e_vec from a Hermitian matrix
+    e_val, e_vec = np.linalg.eigh(matrix)
+    indices = e_val.argsort()[::-1]  # arguments for sorting e_val desc
+    e_val, e_vec = e_val[indices], e_vec[:, indices]
+    e_val = np.diagflat(e_val)
+    return e_val, e_vec
 
 
-def denoisedCorr(eVal, eVec, nFacts):
+def denoised_corr(e_val, e_vec, n_facts):
     # Remove noise from corr by fixing random eigenvalues
-    eVal_ = np.diag(eVal).copy()
-    eVal_[nFacts:] = eVal_[nFacts:].sum() / float(eVal_.shape[0] - nFacts)
-    eVal_ = np.diag(eVal_)
-    corr1 = np.dot(eVec, eVal_).dot(eVec.T)
-    corr1 = cov2corr(corr1)
+    e_val_ = np.diag(e_val).copy()
+    e_val_[n_facts:] = e_val_[n_facts:].sum() / float(e_val_.shape[0] - n_facts)
+    e_val_ = np.diag(e_val_)
+    corr1 = np.dot(e_vec, e_val_).dot(e_vec.T)
+    corr1 = cov_to_corr(corr1)
     return corr1
 
 
-def deNoiseCov(cov0, q, bWidth):
-    corr0 = cov2corr(cov0)
-    eVal0, eVec0 = getPCA(corr0)
-    eMax0, var0 = findMaxEval(np.diag(eVal0), q, bWidth)
-    nFacts0 = eVal0.shape[0] - np.diag(eVal0)[::-1].searchsorted(eMax0)
-    corr1 = denoisedCorr(eVal0, eVec0, nFacts0)
-    cov1 = corr2cov(corr1, np.diag(cov0) ** .5)
+def de_noise_cov(cov0, q, b_width):
+    corr0 = cov_to_corr(cov0)
+    e_val_0, e_vec_0 = get_PCA(corr0)
+    e_max_0, var0 = find_max_eval(np.diag(e_val_0), q, b_width)
+    n_facts_0 = e_val_0.shape[0] - np.diag(e_val_0)[::-1].searchsorted(e_max_0)
+    corr1 = denoised_corr(e_val_0, e_vec_0, n_facts_0)
+    cov1 = corr_to_cov(corr1, np.diag(cov0) ** .5)
     return cov1
