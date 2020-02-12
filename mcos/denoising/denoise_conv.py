@@ -5,98 +5,25 @@ import numpy as np
 import pandas as pd
 
 
-def _fit_KDE(obs: np.array, bandwidth: float = .25, kernel: str = 'gaussian', x: np.array = None) -> pd.Series:
+def de_noise_cov(cov0: np.array, q: float, bandwidth: float) -> np.array:
     """
-    Fit kernel to a series of observations, and derive the prob of observations.
-    x is the array of values on which the fit KDE will be evaluated
-    :param obs: the series of observations
-    :param bandwidth: bandwidth hyper-parameter for KernelDensity
-    :param kernel: kernel hyper-parameter for KernelDensity
-    :param x: array of values _fit_KDE will be evaluated against
-    :return: a Marcenko-Pastur empirical probability density function
-    """
-    if len(obs.shape) == 1:
-        obs = obs.reshape(-1, 1)
-    kde = KernelDensity(kernel=kernel, bandwidth=bandwidth).fit(obs)
-    if x is None:
-        x = np.unique(obs).reshape(-1, 1)
-    if len(x.shape) == 1:
-        x = x.reshape(-1, 1)
-    log_prob = kde.score_samples(x)  # log(density)
-    pdf = pd.Series(np.exp(log_prob), index=x.flatten())
-    return pdf
-
-
-def _mp_PDF(var: float, q: float, pts: int) -> pd.Series:
-    """
-    Creates a theoretical Marcenko-Pastur probability density function
-    :param var: variance 𝜎^2
-    :param q: q=T/N where T=sample length and N=number of variables
-    :param pts: number of points in the distribution
-    :return: a Marcenko-Pastur theoretical probability density function
-    """
-    e_min, e_max = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
-    e_val = np.linspace(e_min, e_max, pts).flatten()
-    pdf = q / (2 * np.pi * var * e_val) * ((e_max - e_val) * (e_val - e_min)) ** .5
-    pdf = pdf.flatten()
-    pdf = pd.Series(pdf, index=e_val)
-    return pdf
-
-
-def _err_PDFs(var: float, e_val: pd.Series, q: float, bandwidth: float, pts: int = 1000) -> float:
-    """
-    Calculates a theoretical Marcenko-Pastur probability density function and
-    an empirical Marcenko-Pastur probability density function,
-    and finds the error between the two by squaring the difference of the two
-    :param var: variance 𝜎^2
-    :param e_val: array of eigenvalues
+    Computes the correlation matrix associated with a given covariance matrix,
+    and derives the eigenvalues and eigenvectors for that correlation matrix.
+    Then shrinks the eigenvalues associated with noise, resulting in a de-noised correlation matrix
+    which is then used to recover the covariance matrix. In summary, this step shrinks only the eigenvalues
+    associated with noise, leaving the eigenvalues associated with signal unchanged.
+    :param cov0: the covariance matrix we want to de-noise
     :param q: q=T/N where T=sample length and N=number of variables
     :param bandwidth: bandwidth hyper-parameter for KernelDensity
-    :param pts: number of points in the distribution
-    :return: the error of the probability distribution functions obtained by squaring the difference
-    of the theoretical and empirical Marcenko-Pastur probability density functions
+    :return: de-noised covariance matrix
     """
-    # Fit error
-    pdf0 = _mp_PDF(var, q, pts)  # theoretical probability density function
-    pdf1 = _fit_KDE(e_val, bandwidth, x=pdf0.index.values)  # empirical probability density function
-    sse = np.sum((pdf1 - pdf0) ** 2)
-    return sse
-
-
-def _find_max_eval(e_val: np.array, q: float, bandwidth: float) -> (float, float):
-    """
-    Uses a Kernel Density Estimate (KDE) algorithm to fit the
-    Marcenko-Pastur distribution to the empirical distribution of eigenvalues.
-    This has the effect of separating noise-related eigenvalues from signal-related eigenvalues.
-    :param e_val: array of eigenvalues
-    :param q: q=T/N where T=sample length and N=number of variables
-    :param bandwidth: bandwidth hyper-parameter for KernelDensity
-    :return: max random eigenvalue, variance
-    """
-    # Find max random e_val by fitting Marcenko's dist to the empirical one
-    out = minimize(
-        lambda *x: _err_PDFs(*x),
-        .5,
-        args=(e_val, q, bandwidth),
-        bounds=((1E-5, 1 - 1E-5),)
-    )
-    if out['success']:
-        var = out['x'][0]
-    else:
-        var = 1
-    e_max = var * (1 + (1. / q) ** .5) ** 2
-    return e_max, var
-
-
-def _corr_to_cov(corr: np.array, std: np.array) -> np.array:
-    """
-    Recovers the covariance matrix from the de-noise correlation matrix
-    :param corr: de-noised correlation matrix
-    :param std: standard deviation of the correlation matrix
-    :return: a recovered covariance matrix
-    """
-    cov = corr * np.outer(std, std)
-    return cov
+    corr0 = _cov_to_corr(cov0)
+    e_val_0, e_vec_0 = _get_PCA(corr0)
+    e_max_0, var0 = _find_max_eval(np.diag(e_val_0), q, bandwidth)
+    n_facts_0 = e_val_0.shape[0] - np.diag(e_val_0)[::-1].searchsorted(e_max_0)
+    corr1 = _denoised_corr(e_val_0, e_vec_0, n_facts_0)
+    cov1 = _corr_to_cov(corr1, np.diag(cov0) ** .5)
+    return cov1
 
 
 def _cov_to_corr(cov: np.array) -> np.array:
@@ -124,6 +51,89 @@ def _get_PCA(matrix: np.array) -> (np.array, np.array):
     return e_val, e_vec
 
 
+def _find_max_eval(e_val: np.array, q: float, bandwidth: float) -> (float, float):
+    """
+    Uses a Kernel Density Estimate (KDE) algorithm to fit the
+    Marcenko-Pastur distribution to the empirical distribution of eigenvalues.
+    This has the effect of separating noise-related eigenvalues from signal-related eigenvalues.
+    :param e_val: array of eigenvalues
+    :param q: q=T/N where T=sample length and N=number of variables
+    :param bandwidth: bandwidth hyper-parameter for KernelDensity
+    :return: max random eigenvalue, variance
+    """
+    # Find max random e_val by fitting Marcenko's dist to the empirical one
+    out = minimize(
+        lambda *x: _err_PDFs(*x),
+        .5,
+        args=(e_val, q, bandwidth),
+        bounds=((1E-5, 1 - 1E-5),)
+    )
+    if out['success']:
+        var = out['x'][0]
+    else:
+        var = 1
+    e_max = var * (1 + (1. / q) ** .5) ** 2
+    return e_max, var
+
+
+def _err_PDFs(var: float, e_val: pd.Series, q: float, bandwidth: float, pts: int = 1000) -> float:
+    """
+    Calculates a theoretical Marcenko-Pastur probability density function and
+    an empirical Marcenko-Pastur probability density function,
+    and finds the error between the two by squaring the difference of the two
+    :param var: variance 𝜎^2
+    :param e_val: array of eigenvalues
+    :param q: q=T/N where T=sample length and N=number of variables
+    :param bandwidth: bandwidth hyper-parameter for KernelDensity
+    :param pts: number of points in the distribution
+    :return: the error of the probability distribution functions obtained by squaring the difference
+    of the theoretical and empirical Marcenko-Pastur probability density functions
+    """
+    # Fit error
+    pdf0 = _mp_PDF(var, q, pts)  # theoretical probability density function
+    pdf1 = _fit_KDE(e_val, bandwidth, x=pdf0.index.values)  # empirical probability density function
+    sse = np.sum((pdf1 - pdf0) ** 2)
+    return sse
+
+
+def _mp_PDF(var: float, q: float, pts: int) -> pd.Series:
+    """
+    Creates a theoretical Marcenko-Pastur probability density function
+    :param var: variance 𝜎^2
+    :param q: q=T/N where T=sample length and N=number of variables
+    :param pts: number of points in the distribution
+    :return: a Marcenko-Pastur theoretical probability density function
+    """
+    e_min, e_max = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
+    e_val = np.linspace(e_min, e_max, pts).flatten()
+    pdf = q / (2 * np.pi * var * e_val) * ((e_max - e_val) * (e_val - e_min)) ** .5
+    pdf = pdf.flatten()
+    pdf = pd.Series(pdf, index=e_val)
+    return pdf
+
+
+def _fit_KDE(obs: np.array, bandwidth: float = .25, kernel: str = 'gaussian', x: np.array = None) -> pd.Series:
+    """
+    Fit kernel to a series of observations, and derive the prob of observations.
+    x is the array of values on which the fit KDE will be evaluated
+    :param obs: the series of observations
+    :param bandwidth: bandwidth hyper-parameter for KernelDensity
+    :param kernel: kernel hyper-parameter for KernelDensity
+    :param x: array of values _fit_KDE will be evaluated against
+    :return: a Marcenko-Pastur empirical probability density function
+    """
+    if len(obs.shape) == 1:
+        obs = obs.reshape(-1, 1)
+    kde = KernelDensity(kernel=kernel, bandwidth=bandwidth).fit(obs)
+    if x is None:
+        x = np.unique(obs).reshape(-1, 1)
+    if len(x.shape) == 1:
+        x = x.reshape(-1, 1)
+    log_prob = kde.score_samples(x)  # log(density)
+    pdf = pd.Series(np.exp(log_prob), index=x.flatten())
+    return pdf
+
+
 def _denoised_corr(e_val: np.array, e_vec: np.array, n_facts: int) -> np.array:
     """
     Shrinks the eigenvalues associated with noise, and returns a de-noised correlation matrix
@@ -141,22 +151,12 @@ def _denoised_corr(e_val: np.array, e_vec: np.array, n_facts: int) -> np.array:
     return corr1
 
 
-def de_noise_cov(cov0: np.array, q: float, bandwidth: float) -> np.array:
+def _corr_to_cov(corr: np.array, std: np.array) -> np.array:
     """
-    Computes the correlation matrix associated with a given covariance matrix,
-    and derives the eigenvalues and eigenvectors for that correlation matrix.
-    Then shrinks the eigenvalues associated with noise, resulting in a de-noised correlation matrix
-    which is then used to recover the covariance matrix. In summary, this step shrinks only the eigenvalues
-    associated with noise, leaving the eigenvalues associated with signal unchanged.
-    :param cov0: the covariance matrix we want to de-noise
-    :param q: q=T/N where T=sample length and N=number of variables
-    :param bandwidth: bandwidth hyper-parameter for KernelDensity
-    :return: de-noised covariance matrix
+    Recovers the covariance matrix from the de-noise correlation matrix
+    :param corr: de-noised correlation matrix
+    :param std: standard deviation of the correlation matrix
+    :return: a recovered covariance matrix
     """
-    corr0 = _cov_to_corr(cov0)
-    e_val_0, e_vec_0 = _get_PCA(corr0)
-    e_max_0, var0 = _find_max_eval(np.diag(e_val_0), q, bandwidth)
-    n_facts_0 = e_val_0.shape[0] - np.diag(e_val_0)[::-1].searchsorted(e_max_0)
-    corr1 = _denoised_corr(e_val_0, e_vec_0, n_facts_0)
-    cov1 = _corr_to_cov(corr1, np.diag(cov0) ** .5)
-    return cov1
+    cov = corr * np.outer(std, std)
+    return cov
