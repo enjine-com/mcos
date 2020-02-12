@@ -15,7 +15,7 @@ def simulate_optimizations(obs_simulator: AbstractObservationSimulator, n_sims: 
         mu_hat, cov_hat = obs_simulator.simulate()
 
         if de_noise:
-            pass  # insert denoising function here
+            pass  # insert de_noising function here
 
         for optimizer in optimizers:
             allocation = optimizer.allocate(mu_hat, cov_hat)

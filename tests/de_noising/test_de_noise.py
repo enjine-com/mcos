@@ -1,7 +1,7 @@
 from numpy.testing import assert_almost_equal
 from pypfopt.risk_models import sample_cov
 import pytest
-from mcos.denoising.denoise import de_noise_covariance_matrix
+from mcos.de_noising.de_noise import de_noise_covariance_matrix
 
 
 @pytest.mark.parametrize('q, bandwidth', [(.5, .25), (1.5, .9), (4.5, 1.9)])

@@ -33,11 +33,11 @@ def de_noise_covariance_matrix(covariance_matrix: np.array, q: float, bandwidth:
     n_facts = eigenvalues.shape[0] - np.diag(eigenvalues)[::-1].searchsorted(max_eigenvalue)
 
     # de-noise the correlation matrix
-    correlation_matrix = _denoised_corr(eigenvalues, eigenvectors, n_facts)
+    correlation_matrix = _de_noised_corr(eigenvalues, eigenvectors, n_facts)
 
     # recover covariance matrix from correlation matrix
-    denoised_covariance_matrix = _corr_to_cov(correlation_matrix, np.diag(covariance_matrix) ** .5)
-    return denoised_covariance_matrix
+    de_noised_covariance_matrix = _corr_to_cov(correlation_matrix, np.diag(covariance_matrix) ** .5)
+    return de_noised_covariance_matrix
 
 
 def _cov_to_corr(cov: np.array) -> np.array:
@@ -148,7 +148,7 @@ def _fit_KDE(obs: np.array, bandwidth: float = .25, kernel: str = 'gaussian', x:
     return pdf
 
 
-def _denoised_corr(eigenvalues: np.array, eigenvectors: np.array, n_facts: int) -> np.array:
+def _de_noised_corr(eigenvalues: np.array, eigenvectors: np.array, n_facts: int) -> np.array:
     """
     Shrinks the eigenvalues associated with noise, and returns a de-noised correlation matrix
     :param eigenvalues: array of eigenvalues
