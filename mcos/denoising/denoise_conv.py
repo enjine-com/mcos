@@ -1,4 +1,4 @@
-from sklearn.neighbors.kde import KernelDensity
+from sklearn.neighbors import KernelDensity
 from scipy.optimize import minimize
 import numpy as np
 import pandas as pd
