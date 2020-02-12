@@ -1,4 +1,3 @@
-# Code modified from section 4.2 of the "A Robust Estimator of the Efficient Frontier" paper
 from sklearn.neighbors import KernelDensity
 from scipy.optimize import minimize
 import numpy as np
@@ -10,8 +9,14 @@ def de_noise_cov(cov0: np.array, q: float, bandwidth: float) -> np.array:
     Computes the correlation matrix associated with a given covariance matrix,
     and derives the eigenvalues and eigenvectors for that correlation matrix.
     Then shrinks the eigenvalues associated with noise, resulting in a de-noised correlation matrix
-    which is then used to recover the covariance matrix. In summary, this step shrinks only the eigenvalues
+    which is then used to recover the covariance matrix.
+
+    In summary, this step shrinks only the eigenvalues
     associated with noise, leaving the eigenvalues associated with signal unchanged.
+
+    For more info see section 4.2 of "A Robust Estimator of the Efficient Frontier",
+    this function and the functions it calls are all modified from this section
+
     :param cov0: the covariance matrix we want to de-noise
     :param q: q=T/N where T=sample length and N=number of variables
     :param bandwidth: bandwidth hyper-parameter for KernelDensity
