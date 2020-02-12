@@ -1,3 +1,4 @@
+# Code modified from section 4.2 of the "A Robust Estimator of the Efficient Frontier" paper
 from sklearn.neighbors import KernelDensity
 from scipy.optimize import minimize
 import numpy as np
