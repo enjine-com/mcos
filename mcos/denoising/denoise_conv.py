@@ -35,8 +35,9 @@ def mp_PDF(var: float, q: float, pts: int) -> pd.Series:
     :return: a Marcenko-Pastur theoretical probability density function
     """
     e_min, e_max = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
-    e_val = np.linspace(e_min, e_max, pts)
+    e_val = np.linspace(e_min, e_max, pts).flatten()
     pdf = q / (2 * np.pi * var * e_val) * ((e_max - e_val) * (e_val - e_min)) ** .5
+    pdf = pdf.flatten()
     pdf = pd.Series(pdf, index=e_val)
     return pdf
 

@@ -1,3 +1,8 @@
+from pypfopt.risk_models import sample_cov
+import pytest
+from mcos.denoising import denoise_conv
+
+
 class TestDeNoiseConv:
     def test_fit_KDE(self):
         pass
@@ -23,5 +28,10 @@ class TestDeNoiseConv:
     def test_denoised_corr(self):
         pass
 
-    def test_de_noise_cov(self):
-        pass
+    def test_de_noise_cov(self, covariance_matrix):
+        results = denoise_conv.de_noise_cov(covariance_matrix, .5, .25)
+        assert results.shape == (20, 20)
+
+    @pytest.fixture
+    def covariance_matrix(self, prices_df):
+        return sample_cov(prices_df).values
