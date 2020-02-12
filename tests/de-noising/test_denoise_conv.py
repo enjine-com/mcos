@@ -28,7 +28,8 @@ class TestDeNoiseConv:
     def test_denoised_corr(self):
         pass
 
-    def test_de_noise_cov(self, covariance_matrix):
+    @pytest.mark.parametrize('q, bandwidth', [(.5, .25), (1.5, .9), (4.5, 1.9)])
+    def test_de_noise_cov(self, q, bandwidth, covariance_matrix):
         results = denoise_conv.de_noise_cov(covariance_matrix, .5, .25)
         assert results.shape == (20, 20)
 
