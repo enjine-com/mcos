@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def de_noise_cov(covariance_matrix: np.array, q: float, bandwidth: float) -> np.array:
+def de_noise_covariance_matrix(covariance_matrix: np.array, q: float, bandwidth: float) -> np.array:
     """
     Computes the correlation matrix associated with a given covariance matrix,
     and derives the eigenvalues and eigenvectors for that correlation matrix.

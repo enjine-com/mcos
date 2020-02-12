@@ -1,12 +1,12 @@
 from numpy.testing import assert_almost_equal
 from pypfopt.risk_models import sample_cov
 import pytest
-from mcos.denoising.denoise_conv import de_noise_cov
+from mcos.denoising.denoise import de_noise_covariance_matrix
 
 
 @pytest.mark.parametrize('q, bandwidth', [(.5, .25), (1.5, .9), (4.5, 1.9)])
-def test_de_noise_cov(q, bandwidth, covariance_matrix, expected_results):
-    results = de_noise_cov(covariance_matrix, q, bandwidth)
+def test_de_noise_covariance_matrix(q, bandwidth, covariance_matrix, expected_results):
+    results = de_noise_covariance_matrix(covariance_matrix, q, bandwidth)
     assert results.shape == (20, 20)
     assert_almost_equal(results.min(), 0.013728494161889633)
     assert_almost_equal(results.max(), 0.39058571400929504)
