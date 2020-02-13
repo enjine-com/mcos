@@ -26,7 +26,7 @@ def de_noise_covariance_matrix(covariance_matrix: np.array, n_observations: int,
     q = n_observations / covariance_matrix.shape[1]
 
     # get correlation matrix based on covariance matrix
-    correlation_matrix = _cov_to_corr(covariance_matrix)
+    correlation_matrix = cov_to_corr(covariance_matrix)
 
     # Get eigenvalues and eigenvectors in the correlation matrix
     eigenvalues, eigenvectors = _get_PCA(correlation_matrix)
@@ -43,7 +43,7 @@ def de_noise_covariance_matrix(covariance_matrix: np.array, n_observations: int,
     return de_noised_covariance_matrix
 
 
-def _cov_to_corr(cov: np.array) -> np.array:
+def cov_to_corr(cov: np.array) -> np.array:
     """
     Derive the correlation matrix from a covariance matrix
     :param cov: covariance matrix
@@ -164,7 +164,7 @@ def _de_noised_corr(eigenvalues: np.array, eigenvectors: np.array, n_facts: int)
     eigenvalues_[n_facts:] = eigenvalues_[n_facts:].sum() / float(eigenvalues_.shape[0] - n_facts)
     eigenvalues_ = np.diag(eigenvalues_)
     corr = np.dot(eigenvectors, eigenvalues_).dot(eigenvectors.T)
-    corr = _cov_to_corr(corr)
+    corr = cov_to_corr(corr)
     return corr
 
 

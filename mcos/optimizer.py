@@ -1,11 +1,15 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from pypfopt.efficient_frontier import EfficientFrontier
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples
+from mcos.de_noising.de_noise import cov_to_corr
 
 
 class AbstractOptimizer(ABC):
     """Helper class that provides a standard way to create a new Optimizer using inheritance"""
-    
+
     @abstractmethod
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         """
@@ -33,9 +37,66 @@ class MarkowitzOptimizer(AbstractOptimizer):
         ef = EfficientFrontier(mu, cov)
         ef.max_sharpe()
         weights = ef.clean_weights()
-        
+
         return np.array(list(weights.values()))
 
     @property
     def name(self) -> str:
         return 'markowitz'
+
+
+class NCOOptimizer(AbstractOptimizer):
+
+    # ------------------------------------------------------------------------------
+    def clusterKMeansBase(self, corr0, maxNumClusters=None, n_init=10):
+        dist, silh = ((1 - corr0.fillna(0)) / 2.) ** .5, pd.Series()  # distance matrix
+        if maxNumClusters is None: maxNumClusters = corr0.shape[0] / 2
+        for init in range(n_init):
+            for i in range(2, maxNumClusters + 1):  # find optimal num clusters
+                kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1)
+        kmeans_ = kmeans_.fit(dist)
+        silh_ = silhouette_samples(dist, kmeans_.labels_)
+        stat = (silh_.mean() / silh_.std(), silh.mean() / silh.std())
+        if np.isnan(stat[1]) or stat[0] > stat[1]:
+            silh, kmeans = silh_, kmeans_
+        newIdx = np.argsort(kmeans.labels_)
+        corr1 = corr0.iloc[newIdx]  # reorder rows
+        corr1 = corr1.iloc[:, newIdx]  # reorder columns
+        clstrs = {i: corr0.columns[np.where(kmeans.labels_ == i)[0]].tolist() for \
+                  i in np.unique(kmeans.labels_)}  # cluster members
+        silh = pd.Series(silh, index=dist.index)
+        return corr1, clstrs, silh
+
+    # ------------------------------------------------------------------------------
+    def optPort(self, cov, mu=None):
+        inv = np.linalg.inv(cov)
+        ones = np.ones(shape=(inv.shape[0], 1))
+        if mu is None: mu = ones
+        w = np.dot(inv, mu)
+        w /= np.dot(ones.T, w)
+        return w
+
+    # ------------------------------------------------------------------------------
+    def nco(self, cov, mu=None, maxNumClusters=None):
+        cov = pd.DataFrame(cov)
+        if mu is not None: mu = pd.Series(mu[:, 0])
+        corr1 = cov_to_corr(cov)
+        corr1, clstrs, _ = self.clusterKMeansBase(corr1, maxNumClusters, n_init=10)
+        wIntra = pd.DataFrame(0, index=cov.index, columns=clstrs.keys())
+        for i in clstrs:
+            cov_ = cov.loc[clstrs[i], clstrs[i]].values
+        mu_ = (None if mu is None else mu.loc[clstrs[i]].values.reshape(-1, 1))
+        wIntra.loc[clstrs[i], i] = self.optPort(cov_, mu_).flatten()
+        cov_ = wIntra.T.dot(np.dot(cov, wIntra))  # reduce covariance matrix
+        mu_ = (None if mu is None else wIntra.T.dot(mu))
+        wInter = pd.Series(self.optPort(cov_, mu_).flatten(), index=cov_.index)
+        nco = wIntra.mul(wInter, axis=1).sum(axis=1).values.reshape(-1, 1)
+
+        return nco
+
+    def allocate(self, mu: np.array, cov: np.array) -> np.array:
+        return self.nco(cov, mu)
+
+    @property
+    def name(self) -> str:
+        return 'NCO'
