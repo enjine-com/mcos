@@ -32,7 +32,7 @@ def de_noise_covariance_matrix(covariance_matrix: np.array, n_observations: int,
     eigenvalues, eigenvectors = _get_PCA(correlation_matrix)
 
     # Find max random eigenvalue
-    max_eigenvalue, _ = _find_max_eigenvalue(np.diag(eigenvalues), q, bandwidth)
+    max_eigenvalue = _find_max_eigenvalue(np.diag(eigenvalues), q, bandwidth)
 
     # de-noise the correlation matrix
     n_facts = eigenvalues.shape[0] - np.diag(eigenvalues)[::-1].searchsorted(max_eigenvalue)
@@ -68,7 +68,7 @@ def _get_PCA(matrix: np.array) -> (np.array, np.array):
     return eigenvalues, eigenvectors
 
 
-def _find_max_eigenvalue(eigenvalues: np.array, q: float, bandwidth: float) -> (float, float):
+def _find_max_eigenvalue(eigenvalues: np.array, q: float, bandwidth: float) -> float:
     """
     Uses a Kernel Density Estimate (KDE) algorithm to fit the
     Marcenko-Pastur distribution to the empirical distribution of eigenvalues.
@@ -90,7 +90,7 @@ def _find_max_eigenvalue(eigenvalues: np.array, q: float, bandwidth: float) -> (
     else:
         var = 1
     max_eigenvalue = var * (1 + (1. / q) ** .5) ** 2
-    return max_eigenvalue, var
+    return max_eigenvalue
 
 
 def _err_PDFs(var: float, eigenvalues: pd.Series, q: float, bandwidth: float, pts: int = 1000) -> float:
