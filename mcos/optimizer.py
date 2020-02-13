@@ -46,6 +46,35 @@ class MarkowitzOptimizer(AbstractOptimizer):
 
 
 class NCOOptimizer(AbstractOptimizer):
+    def allocate(self, mu: np.array, cov: np.array) -> np.array:
+        return self._nco(cov, mu)
+
+    @property
+    def name(self) -> str:
+        return 'NCO'
+
+    def _nco(self, cov, mu=None, max_num_clusters=None):
+        cov = pd.DataFrame(cov)
+
+        if mu is not None:
+            mu = pd.Series(mu)
+
+        corr1 = cov_to_corr(cov)
+        corr1, clstrs, _ = self._cluster_k_means_base(corr1, max_num_clusters, n_init=10)
+        w_intra = pd.DataFrame(0, index=cov.index, columns=clstrs.keys())
+        for i in clstrs:
+            cov_ = cov.loc[clstrs[i], clstrs[i]].values
+            mu_ = (None if mu is None else mu.loc[clstrs[i]].values.reshape(-1, 1))
+            w_intra.loc[clstrs[i], i] = self._opt_port(cov_, mu_).flatten()
+
+        cov_ = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
+        mu_ = (None if mu is None else w_intra.T.dot(mu))
+
+        w_inter = pd.Series(self._opt_port(cov_, mu_).flatten(), index=cov_.index)
+        nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1)
+
+        return nco.flatten()
+
     def _cluster_k_means_base(self, corr0, max_num_clusters=None, n_init=10):
         dist, silh = ((1 - corr0.fillna(0)) / 2.) ** .5, pd.Series()  # distance matrix
 
@@ -84,32 +113,3 @@ class NCOOptimizer(AbstractOptimizer):
         w = np.dot(inv, mu)
         w /= np.dot(ones.T, w)
         return w
-
-    def _nco(self, cov, mu=None, max_num_clusters=None):
-        cov = pd.DataFrame(cov)
-
-        if mu is not None:
-            mu = pd.Series(mu)
-
-        corr1 = cov_to_corr(cov)
-        corr1, clstrs, _ = self._cluster_k_means_base(corr1, max_num_clusters, n_init=10)
-        w_intra = pd.DataFrame(0, index=cov.index, columns=clstrs.keys())
-        for i in clstrs:
-            cov_ = cov.loc[clstrs[i], clstrs[i]].values
-            mu_ = (None if mu is None else mu.loc[clstrs[i]].values.reshape(-1, 1))
-            w_intra.loc[clstrs[i], i] = self._opt_port(cov_, mu_).flatten()
-
-        cov_ = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
-        mu_ = (None if mu is None else w_intra.T.dot(mu))
-
-        w_inter = pd.Series(self._opt_port(cov_, mu_).flatten(), index=cov_.index)
-        nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1)
-
-        return nco.flatten()
-
-    def allocate(self, mu: np.array, cov: np.array) -> np.array:
-        return self._nco(cov, mu)
-
-    @property
-    def name(self) -> str:
-        return 'NCO'
