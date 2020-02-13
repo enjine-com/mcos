@@ -156,7 +156,7 @@ def _de_noised_corr(eigenvalues: np.array, eigenvectors: np.array, n_facts: int)
     Shrinks the eigenvalues associated with noise, and returns a de-noised correlation matrix
     :param eigenvalues: array of eigenvalues
     :param eigenvectors: array of eigenvectors
-    :param n_facts: number of elements in eigenvalues that is then diagonalized to replace with the mean of eigenvalues
+    :param n_facts: number of elements in diagonalized eigenvalues to replace with the mean of eigenvalues
     :return: de-noised correlation matrix
     """
     # Remove noise from corr by fixing random eigenvalues
