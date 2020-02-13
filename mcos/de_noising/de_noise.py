@@ -58,7 +58,7 @@ def _cov_to_corr(cov: np.array) -> np.array:
 def _get_PCA(matrix: np.array) -> (np.array, np.array):
     """
     Gets eigenvalues and eigenvectors from a Hermitian matrix
-    :param matrix: correlation matrix
+    :param matrix: a Hermitian matrix
     :return: array of eigenvalues and array of eigenvectors
     """
     eigenvalues, eigenvectors = np.linalg.eigh(matrix)
