@@ -119,7 +119,7 @@ def _mp_PDF(var: float, q: float, pts: int) -> pd.Series:
     :param var: variance 𝜎^2
     :param q: q=T/N where T=sample length and N=number of variables
     :param pts: number of points in the distribution
-    :return: a Marcenko-Pastur theoretical probability density function
+    :return: a theoretical Marcenko-Pastur probability density function
     """
     min_eigenvalue, max_eigenvalue = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
     eigenvalues = np.linspace(min_eigenvalue, max_eigenvalue, pts).flatten()
@@ -137,7 +137,7 @@ def _fit_KDE(obs: np.array, bandwidth: float = .25, kernel: str = 'gaussian', x:
     :param bandwidth: bandwidth hyper-parameter for KernelDensity
     :param kernel: kernel hyper-parameter for KernelDensity
     :param x: array of values _fit_KDE will be evaluated against
-    :return: a Marcenko-Pastur empirical probability density function
+    :return: an empirical Marcenko-Pastur probability density function
     """
     if len(obs.shape) == 1:
         obs = obs.reshape(-1, 1)
