@@ -33,9 +33,9 @@ def de_noise_covariance_matrix(covariance_matrix: np.array, n_observations: int,
 
     # Find max random eigenvalue
     max_eigenvalue, _ = _find_max_eigenvalue(np.diag(eigenvalues), q, bandwidth)
-    n_facts = eigenvalues.shape[0] - np.diag(eigenvalues)[::-1].searchsorted(max_eigenvalue)
 
     # de-noise the correlation matrix
+    n_facts = eigenvalues.shape[0] - np.diag(eigenvalues)[::-1].searchsorted(max_eigenvalue)
     correlation_matrix = _de_noised_corr(eigenvalues, eigenvectors, n_facts)
 
     # recover covariance matrix from correlation matrix
