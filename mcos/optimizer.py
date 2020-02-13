@@ -50,7 +50,7 @@ class NCOOptimizer(AbstractOptimizer):
         dist, silh = ((1 - corr0.fillna(0)) / 2.) ** .5, pd.Series()  # distance matrix
 
         if max_num_clusters is None:
-            max_num_clusters = corr0.shape[0] / 2
+            max_num_clusters = corr0.shape[0] // 2
 
         for init in range(n_init):
             for i in range(2, max_num_clusters + 1):  # find optimal num clusters
@@ -89,16 +89,15 @@ class NCOOptimizer(AbstractOptimizer):
         cov = pd.DataFrame(cov)
 
         if mu is not None:
-            mu = pd.Series(mu[:, 0])
+            mu = pd.Series(mu)
 
         corr1 = cov_to_corr(cov)
         corr1, clstrs, _ = self._cluster_k_means_base(corr1, max_num_clusters, n_init=10)
         w_intra = pd.DataFrame(0, index=cov.index, columns=clstrs.keys())
         for i in clstrs:
             cov_ = cov.loc[clstrs[i], clstrs[i]].values
-
-        mu_ = (None if mu is None else mu.loc[clstrs[i]].values.reshape(-1, 1))
-        w_intra.loc[clstrs[i], i] = self._opt_port(cov_, mu_).flatten()
+            mu_ = (None if mu is None else mu.loc[clstrs[i]].values.reshape(-1, 1))
+            w_intra.loc[clstrs[i], i] = self._opt_port(cov_, mu_).flatten()
 
         cov_ = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
         mu_ = (None if mu is None else w_intra.T.dot(mu))
@@ -106,7 +105,7 @@ class NCOOptimizer(AbstractOptimizer):
         w_inter = pd.Series(self._opt_port(cov_, mu_).flatten(), index=cov_.index)
         nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1)
 
-        return nco
+        return nco.flatten()
 
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         return self._nco(cov, mu)
