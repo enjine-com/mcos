@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def de_noise_covariance_matrix(covariance_matrix: np.array, q: float, bandwidth: float) -> np.array:
+def de_noise_covariance_matrix(covariance_matrix: np.array, n_observations: int, bandwidth: float = .25) -> np.array:
     """
     Computes the correlation matrix associated with a given covariance matrix,
     and derives the eigenvalues and eigenvectors for that correlation matrix.
@@ -18,10 +18,13 @@ def de_noise_covariance_matrix(covariance_matrix: np.array, q: float, bandwidth:
     this function and the functions it calls are all modified from this section
 
     :param covariance_matrix: the covariance matrix we want to de-noise
-    :param q: q=T/N where T=sample length and N=number of variables
+    :param n_observations: the number of observations used to create the covariance matrix
     :param bandwidth: bandwidth hyper-parameter for KernelDensity
     :return: de-noised covariance matrix
     """
+    #  q=T/N where T=sample length and N=number of variables
+    q = n_observations / covariance_matrix.shape[1]
+
     # get correlation matrix based on covariance matrix
     correlation_matrix = _cov_to_corr(covariance_matrix)
 
@@ -29,7 +32,7 @@ def de_noise_covariance_matrix(covariance_matrix: np.array, q: float, bandwidth:
     eigenvalues, eigenvectors = _get_PCA(correlation_matrix)
 
     # Find max random eigenvalue
-    max_eigenvalue, _ = _find_max_eigenvalues(np.diag(eigenvalues), q, bandwidth)
+    max_eigenvalue, _ = _find_max_eigenvalue(np.diag(eigenvalues), q, bandwidth)
     n_facts = eigenvalues.shape[0] - np.diag(eigenvalues)[::-1].searchsorted(max_eigenvalue)
 
     # de-noise the correlation matrix
@@ -65,7 +68,7 @@ def _get_PCA(matrix: np.array) -> (np.array, np.array):
     return eigenvalues, eigenvectors
 
 
-def _find_max_eigenvalues(eigenvalues: np.array, q: float, bandwidth: float) -> (float, float):
+def _find_max_eigenvalue(eigenvalues: np.array, q: float, bandwidth: float) -> (float, float):
     """
     Uses a Kernel Density Estimate (KDE) algorithm to fit the
     Marcenko-Pastur distribution to the empirical distribution of eigenvalues.

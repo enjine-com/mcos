@@ -22,8 +22,7 @@ def simulate_optimizations(
         if de_noise:
             cov_hat = de_noise_covariance_matrix(
                 covariance_matrix=cov_hat,
-                q=obs_simulator.n_observations * 1.0 / cov_hat.shape[1],
-                bandwidth=.25
+                n_observations=obs_simulator.n_observations,
             )
 
         for optimizer in optimizers:
