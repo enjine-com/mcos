@@ -27,9 +27,15 @@ class TestMarkowitzOptimizer:
 
 class TestNCOOptimizier:
 
-    def test_allocate(self, prices_df):
+    def test_allocate_max_sharpe(self, prices_df):
         mu = mean_historical_return(prices_df).values
         cov = sample_cov(prices_df).values
 
         weights = NCOOptimizer().allocate(mu, cov)
+        assert len(weights) == 20
+
+    def test_allocate_min_variance(self, prices_df):
+        cov = sample_cov(prices_df).values
+
+        weights = NCOOptimizer().allocate(mu=None, cov=cov)
         assert len(weights) == 20

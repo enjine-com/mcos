@@ -46,6 +46,10 @@ class MarkowitzOptimizer(AbstractOptimizer):
 
 
 class NCOOptimizer(AbstractOptimizer):
+    """
+    NCO Optimizer
+    """
+
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         return self._nco(cov, mu)
 
@@ -59,49 +63,46 @@ class NCOOptimizer(AbstractOptimizer):
         if mu is not None:
             mu = pd.Series(mu)
 
-        corr1 = cov_to_corr(cov)
-        corr1, clstrs, _ = self._cluster_k_means_base(corr1, max_num_clusters, n_init=10)
-        w_intra = pd.DataFrame(0, index=cov.index, columns=clstrs.keys())
-        for i in clstrs:
-            cov_ = cov.loc[clstrs[i], clstrs[i]].values
-            mu_ = (None if mu is None else mu.loc[clstrs[i]].values.reshape(-1, 1))
-            w_intra.loc[clstrs[i], i] = self._opt_port(cov_, mu_).flatten()
+        corr = cov_to_corr(cov)
+        clusters = self._cluster_k_means_base(corr, max_num_clusters, n_init=10)
+        w_intra = pd.DataFrame(0, index=cov.index, columns=clusters.keys())
+        for key, value in clusters.items():
+            cov_ = cov.loc[value, value].values
+            mu_ = None if mu is None else mu.loc[value].values.reshape(-1, 1)
+            w_intra.loc[value, key] = self._opt_port(cov_, mu_).flatten()
 
-        cov_ = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
-        mu_ = (None if mu is None else w_intra.T.dot(mu))
+        cov = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
+        mu = None if mu is None else w_intra.T.dot(mu)
 
-        w_inter = pd.Series(self._opt_port(cov_, mu_).flatten(), index=cov_.index)
+        w_inter = pd.Series(self._opt_port(cov, mu).flatten(), index=cov.index)
         nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1)
 
         return nco.flatten()
 
-    def _cluster_k_means_base(self, corr0, max_num_clusters=None, n_init=10):
-        dist, silh = ((1 - corr0.fillna(0)) / 2.) ** .5, pd.Series()  # distance matrix
-
+    def _cluster_k_means_base(self, corr, max_num_clusters=None, n_init=10):
+        distance_matrix = ((1 - corr.fillna(0)) / 2.) ** .5
+        silhouettes = pd.Series()
         if max_num_clusters is None:
-            max_num_clusters = corr0.shape[0] // 2
+            max_num_clusters = corr.shape[0] // 2
 
-        for init in range(n_init):
+        for _ in range(n_init):
             for i in range(2, max_num_clusters + 1):  # find optimal num clusters
                 kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1)
 
-        kmeans_ = kmeans_.fit(dist)
-        silh_ = silhouette_samples(dist, kmeans_.labels_)
-        stat = (silh_.mean() / silh_.std(), silh.mean() / silh.std())
+                kmeans_ = kmeans_.fit(distance_matrix)
+                silh_ = silhouette_samples(distance_matrix, kmeans_.labels_)
+                stat1 = silh_.mean() / silh_.std()
+                stat2 = silhouettes.mean() / silhouettes.std()
 
-        if np.isnan(stat[1]) or stat[0] > stat[1]:
-            silh, kmeans = silh_, kmeans_
-        newIdx = np.argsort(kmeans.labels_)
+                if np.isnan(stat2) or stat1 > stat2:
+                    silhouettes, kmeans = silh_, kmeans_
 
-        corr1 = corr0.iloc[newIdx]  # reorder rows
-        corr1 = corr1.iloc[:, newIdx]  # reorder columns
-        clstrs = {
-            i: corr0.columns[np.where(kmeans.labels_ == i)[0]].tolist()
+        clusters = {
+            i: corr.columns[np.where(kmeans.labels_ == i)].tolist()
             for i in np.unique(kmeans.labels_)
         }  # cluster members
 
-        silh = pd.Series(silh, index=dist.index)
-        return corr1, clstrs, silh
+        return clusters
 
     def _opt_port(self, cov, mu=None):
         inv = np.linalg.inv(cov)
