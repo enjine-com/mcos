@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 from typing import List
-from mcos.de_noise import de_noise_covariance_matrix
+
+from mcos.covariance_transformer import CovarianceMatrixDeNoiser
 from mcos.error_estimator import AbstractErrorEstimator
 from mcos.observation_simulator import AbstractObservationSimulator
 from mcos.optimizer import AbstractOptimizer
@@ -20,10 +21,7 @@ def simulate_optimizations(
         mu_hat, cov_hat = obs_simulator.simulate()
 
         if de_noise:
-            cov_hat = de_noise_covariance_matrix(
-                covariance_matrix=cov_hat,
-                n_observations=obs_simulator.n_observations,
-            )
+            cov_hat = CovarianceMatrixDeNoiser(cov_hat, obs_simulator.n_observations).transform()
 
         for optimizer in optimizers:
             allocation = optimizer.allocate(mu_hat, cov_hat)
