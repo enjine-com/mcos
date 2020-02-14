@@ -34,6 +34,6 @@ def simulate_optimizations(
         {
             'optimizer': optimizer.name,
             'mean': np.mean(error_estimates[optimizer.name]),
-            'stdev': np.std(error_estimator[optimizers.name])
+            'stdev': np.std(error_estimates[optimizer.name])
         } for optimizer in optimizers
     ]).set_index('optimizer')
