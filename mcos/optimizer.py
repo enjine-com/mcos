@@ -4,7 +4,7 @@ from pypfopt.efficient_frontier import EfficientFrontier
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
-from mcos.de_noising.de_noise import cov_to_corr
+from mcos.de_noise import cov_to_corr
 
 
 class AbstractOptimizer(ABC):
