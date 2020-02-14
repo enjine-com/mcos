@@ -66,10 +66,10 @@ class NCOOptimizer(AbstractOptimizer):
         corr = cov_to_corr(cov)
         clusters = self._cluster_k_means_base(corr, max_num_clusters, n_init=10)
         w_intra = pd.DataFrame(0, index=cov.index, columns=clusters.keys())
-        for key, value in clusters.items():
-            cov_ = cov.loc[value, value].values
-            mu_ = None if mu is None else mu.loc[value].values.reshape(-1, 1)
-            w_intra.loc[value, key] = self._opt_port(cov_, mu_).flatten()
+        for cluster_id, cluster in clusters.items():
+            cov_ = cov.loc[cluster, cluster].values
+            mu_ = None if mu is None else mu.loc[cluster].values.reshape(-1, 1)
+            w_intra.loc[cluster, cluster_id] = self._opt_port(cov_, mu_).flatten()
 
         cov = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
         mu = None if mu is None else w_intra.T.dot(mu)
