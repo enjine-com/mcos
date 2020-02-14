@@ -21,7 +21,7 @@ class AbstractCovarianceTransformer(ABC):
         pass
 
 
-class DeNoiseCovarianceMatrix(AbstractCovarianceTransformer):
+class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
     def __init__(self, cov: np.array, n_observations: int):
         super().__init__(cov, n_observations)
 
