@@ -22,21 +22,14 @@ class AbstractCovarianceTransformer(ABC):
         pass
 
 
-class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
+class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
+    def __init__(self, bandwidth: float = .25):
+        """
+        :param bandwidth: bandwidth hyper-parameter for KernelDensity
+        """
+        self.bandwidth = bandwidth
 
     def transform(self, cov: np.array, n_observations: int) -> np.array:
-        """
-        De-noises a covariance matrix as outlined in section 4.2 of "A Robust Estimator of the Efficient Frontier"
-        :return: transformed covariance matrix
-        """
-        return self._de_noise_covariance_matrix(cov, n_observations)
-
-    def _de_noise_covariance_matrix(
-            self,
-            covariance_matrix: np.array,
-            n_observations: int,
-            bandwidth: float = .25
-    ) -> np.array:
         """
         Computes the correlation matrix associated with a given covariance matrix,
         and derives the eigenvalues and eigenvectors for that correlation matrix.
@@ -49,29 +42,28 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
         For more info see section 4.2 of "A Robust Estimator of the Efficient Frontier",
         this function and the functions it calls are all modified from this section
 
-        :param covariance_matrix: the covariance matrix we want to de-noise
+        :param cov: the covariance matrix we want to de-noise
         :param n_observations: the number of observations used to create the covariance matrix
-        :param bandwidth: bandwidth hyper-parameter for KernelDensity
         :return: de-noised covariance matrix
         """
         #  q=T/N where T=sample length and N=number of variables
-        q = n_observations / covariance_matrix.shape[1]
+        q = n_observations / cov.shape[1]
 
         # get correlation matrix based on covariance matrix
-        correlation_matrix = cov_to_corr(covariance_matrix)
+        correlation_matrix = cov_to_corr(cov)
 
         # Get eigenvalues and eigenvectors in the correlation matrix
         eigenvalues, eigenvectors = self._get_PCA(correlation_matrix)
 
         # Find max random eigenvalue
-        max_eigenvalue = self._find_max_eigenvalue(np.diag(eigenvalues), q, bandwidth)
+        max_eigenvalue = self._find_max_eigenvalue(np.diag(eigenvalues), q)
 
         # de-noise the correlation matrix
         n_facts = eigenvalues.shape[0] - np.diag(eigenvalues)[::-1].searchsorted(max_eigenvalue)
         correlation_matrix = self._de_noised_corr(eigenvalues, eigenvectors, n_facts)
 
         # recover covariance matrix from correlation matrix
-        de_noised_covariance_matrix = self._corr_to_cov(correlation_matrix, np.diag(covariance_matrix) ** .5)
+        de_noised_covariance_matrix = self._corr_to_cov(correlation_matrix, np.diag(cov) ** .5)
         return de_noised_covariance_matrix
 
     def _get_PCA(self, matrix: np.array) -> (np.array, np.array):
@@ -86,21 +78,20 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
         eigenvalues = np.diagflat(eigenvalues)
         return eigenvalues, eigenvectors
 
-    def _find_max_eigenvalue(self, eigenvalues: np.array, q: float, bandwidth: float) -> float:
+    def _find_max_eigenvalue(self, eigenvalues: np.array, q: float) -> float:
         """
         Uses a Kernel Density Estimate (KDE) algorithm to fit the
         Marcenko-Pastur distribution to the empirical distribution of eigenvalues.
         This has the effect of separating noise-related eigenvalues from signal-related eigenvalues.
         :param eigenvalues: array of eigenvalues
         :param q: q=T/N where T=sample length and N=number of variables
-        :param bandwidth: bandwidth hyper-parameter for KernelDensity
         :return: max random eigenvalue, variance
         """
         # Find max random eigenvalues by fitting Marcenko's dist to the empirical one
         out = minimize(
             lambda *x: self._err_PDFs(*x),
             .5,
-            args=(eigenvalues, q, bandwidth),
+            args=(eigenvalues, q),
             bounds=((1E-5, 1 - 1E-5),)
         )
         if out['success']:
@@ -110,7 +101,7 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
         max_eigenvalue = var * (1 + (1. / q) ** .5) ** 2
         return max_eigenvalue
 
-    def _err_PDFs(self, var: float, eigenvalues: pd.Series, q: float, bandwidth: float, pts: int = 1000) -> float:
+    def _err_PDFs(self, var: float, eigenvalues: pd.Series, q: float, pts: int = 1000) -> float:
         """
         Calculates a theoretical Marcenko-Pastur probability density function and
         an empirical Marcenko-Pastur probability density function,
@@ -118,14 +109,13 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
         :param var: variance 𝜎^2
         :param eigenvalues: array of eigenvalues
         :param q: q=T/N where T=sample length and N=number of variables
-        :param bandwidth: bandwidth hyper-parameter for KernelDensity
         :param pts: number of points in the distribution
         :return: the error of the probability distribution functions obtained by squaring the difference
         of the theoretical and empirical Marcenko-Pastur probability density functions
         """
         # Fit error
         theoretical_pdf = self._mp_PDF(var, q, pts)  # theoretical probability density function
-        empirical_pdf = self._fit_KDE(eigenvalues, bandwidth,
+        empirical_pdf = self._fit_KDE(eigenvalues,
                                       x=theoretical_pdf.index.values)  # empirical probability density function
         sse = np.sum((empirical_pdf - theoretical_pdf) ** 2)
         return sse
@@ -141,7 +131,7 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
         min_eigenvalue, max_eigenvalue = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
         eigenvalues = np.linspace(min_eigenvalue, max_eigenvalue, pts).flatten()
         pdf = q / (2 * np.pi * var * eigenvalues) * \
-            ((max_eigenvalue - eigenvalues) * (eigenvalues - min_eigenvalue)) ** .5
+              ((max_eigenvalue - eigenvalues) * (eigenvalues - min_eigenvalue)) ** .5
         pdf = pdf.flatten()
         pdf = pd.Series(pdf, index=eigenvalues)
         return pdf
@@ -149,7 +139,6 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
     def _fit_KDE(
             self,
             obs: np.array,
-            bandwidth: float = .25,
             kernel: str = 'gaussian',
             x: np.array = None
     ) -> pd.Series:
@@ -157,14 +146,13 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
         Fit kernel to a series of observations, and derive the prob of observations.
         x is the array of values on which the fit KDE will be evaluated
         :param obs: the series of observations
-        :param bandwidth: bandwidth hyper-parameter for KernelDensity
         :param kernel: kernel hyper-parameter for KernelDensity
         :param x: array of values _fit_KDE will be evaluated against
         :return: an empirical Marcenko-Pastur probability density function
         """
         if len(obs.shape) == 1:
             obs = obs.reshape(-1, 1)
-        kde = KernelDensity(kernel=kernel, bandwidth=bandwidth).fit(obs)
+        kde = KernelDensity(kernel=kernel, bandwidth=self.bandwidth).fit(obs)
         if x is None:
             x = np.unique(obs).reshape(-1, 1)
         if len(x.shape) == 1:
