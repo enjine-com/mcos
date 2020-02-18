@@ -21,7 +21,7 @@ def simulate_optimizations(
         mu_hat, cov_hat = obs_simulator.simulate()
 
         if de_noise:
-            cov_hat = CovarianceMatrixDeNoiser(cov_hat, obs_simulator.n_observations).transform()
+            cov_hat = CovarianceMatrixDeNoiser().transform(cov_hat, obs_simulator.n_observations)
 
         for optimizer in optimizers:
             allocation = optimizer.allocate(mu_hat, cov_hat)
