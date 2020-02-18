@@ -56,7 +56,7 @@ class NCOOptimizer(AbstractOptimizer):
         """
         Set optional variables used during calculations
         :param max_num_clusters: max number of clusters to use during KMeans clustering
-        :param num_clustering_trials: number of times to try KMeans clustering with [1,max_num_clusters] clusters
+        :param num_clustering_trials: number of times to perform KMeans clustering with [1,max_num_clusters] clusters
         """
         self.max_num_clusters = max_num_clusters
         self.num_clustering_trials = num_clustering_trials
@@ -88,9 +88,9 @@ class NCOOptimizer(AbstractOptimizer):
         but hierarchical methods may also be applied. The result is a partition of the original set,
         that is, a collection of mutually disjoint nonempty subsets of variables.
 
-        Second, we compute optimal allocations for each of these clusters
-        separately. This allows us to collapse the original covariance matrix into a reduced covariance
-        matrix, where each cluster is represented as a single variable. The collapsed correlation matrix is
+        Second, we compute optimal allocations for each of these clusters separately.
+        This allows us to collapse the original covariance matrix into a reduced covariance matrix,
+        where each cluster is represented as a single variable. The collapsed correlation matrix is
         closer to an identity matrix than the original correlation matrix was, and therefore more
         amenable to optimization problems (recall the discussion in section 3.2).
 
@@ -100,12 +100,12 @@ class NCOOptimizer(AbstractOptimizer):
         the final allocations are the dot-product of the intra-cluster allocations and the inter-cluster allocations.
 
         By splitting the problem into two separate tasks, NCO contains the instability within each cluster:
-        the instability caused by intra-cluster noise does not propagate across clusters. See López de
-        Prado [2019] for examples, code and additional details regarding NCO.
+        the instability caused by intra-cluster noise does not propagate across clusters.
+        See López de Prado [2019] for examples, code and additional details regarding NCO.
 
         :param cov: Covariance matrix
         :param mu: Expected return vector
-        :return: min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
+        :return: Min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
         """
         cov = pd.DataFrame(cov)
 
@@ -121,18 +121,22 @@ class NCOOptimizer(AbstractOptimizer):
         intra_cluster_allocations = pd.DataFrame(0, index=cov.index, columns=clusters.keys())
         for cluster_id, cluster in clusters.items():
             cov_ = cov.loc[cluster, cluster].values
-            mu_ = None if mu is None else mu.loc[cluster].values.reshape(-1, 1)
-            intra_cluster_allocations.loc[cluster, cluster_id] = self._get_optimal_portfolio(cov_, mu_).flatten()
+            mu_ = mu.loc[cluster].values.reshape(-1, 1) if mu is not None else None
+            intra_cluster_allocations.loc[cluster, cluster_id] = self._get_optimal_portfolio(cov_, mu_)
 
         # reduce covariance matrix
         cov = intra_cluster_allocations.T.dot(np.dot(cov, intra_cluster_allocations))
-        mu = None if mu is None else intra_cluster_allocations.T.dot(mu)
+        mu = intra_cluster_allocations.T.dot(mu) if mu is not None else None
 
         # calculate inter_cluster allocations on reduced covariance matrix
-        inter_cluster_allocations = pd.Series(self._get_optimal_portfolio(cov, mu).flatten(), index=cov.index)
+        inter_cluster_allocations = pd.Series(self._get_optimal_portfolio(cov, mu), index=cov.index)
 
         # final allocations are the dot-product of the intra-cluster allocations and the inter-cluster allocations
-        nco = intra_cluster_allocations.mul(inter_cluster_allocations, axis=1).sum(axis=1).values.reshape(-1, 1).flatten()
+        nco = intra_cluster_allocations\
+            .mul(inter_cluster_allocations, axis=1)\
+            .sum(axis=1).values\
+            .reshape(-1, 1)\
+            .flatten()
         return nco
 
     def _cluster_k_means_base(self, corr: np.array) -> Dict[int, int]:
@@ -184,4 +188,4 @@ class NCOOptimizer(AbstractOptimizer):
 
         w = np.dot(inv, mu)
         w /= np.dot(ones.T, w)
-        return w
+        return w.flatten()
