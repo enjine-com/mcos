@@ -133,3 +133,6 @@ dmypy.json
 
 # pycharm
 .idea
+
+# jupyter notebook
+*.ipynb
