@@ -155,10 +155,11 @@ class NCOOptimizer(AbstractOptimizer):
 
                 kmeans_ = kmeans_.fit(distance_matrix)
                 silh_ = silhouette_samples(distance_matrix, kmeans_.labels_)
-                stat1 = silh_.mean() / silh_.std()
-                stat2 = silhouettes.mean() / silhouettes.std()
 
-                if np.isnan(stat2) or stat1 > stat2:
+                new_calc = silh_.mean() / silh_.std()
+                old_calc = silhouettes.mean() / silhouettes.std()
+
+                if np.isnan(old_calc) or new_calc > old_calc:
                     silhouettes, kmeans = silh_, kmeans_
 
         clusters = {
