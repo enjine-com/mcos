@@ -151,7 +151,7 @@ class NCOOptimizer(AbstractOptimizer):
             max_num_clusters = corr.shape[0] // 2
         for _ in range(self.num_clustering_trials):
             for i in range(2, max_num_clusters + 1):  # find optimal num clusters
-                kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1)
+                kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1, random_state=42)
 
                 kmeans_ = kmeans_.fit(distance_matrix)
                 silh_ = silhouette_samples(distance_matrix, kmeans_.labels_)
