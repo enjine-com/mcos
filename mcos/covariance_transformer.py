@@ -10,29 +10,26 @@ class AbstractCovarianceTransformer(ABC):
     Abstract class for transforming a covariance matrix
     """
 
-    def __init__(self, cov: np.array, n_observations: int):
-        self.cov = cov
-        self.n_observations = n_observations
-
     @abstractmethod
-    def transform(self) -> np.array:
+    def transform(self, cov: np.array, n_observations: int) -> np.array:
         """
         Transforms a covariance matrix
-        @return transformed covariance matrix
+        :param cov: covariance matrix
+        :param n_observations: number of observations used to create the covariance matrix
+        :return: transformed covariance matrix
         """
+
         pass
 
 
 class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
-    def __init__(self, cov: np.array, n_observations: int):
-        super().__init__(cov, n_observations)
 
-    def transform(self) -> np.array:
+    def transform(self, cov: np.array, n_observations: int) -> np.array:
         """
         De-noises a covariance matrix as outlined in section 4.2 of "A Robust Estimator of the Efficient Frontier"
-        @return transformed covariance matrix
+        :return: transformed covariance matrix
         """
-        return self._de_noise_covariance_matrix(self.cov, self.n_observations)
+        return self._de_noise_covariance_matrix(cov, n_observations)
 
     def _de_noise_covariance_matrix(
             self,
