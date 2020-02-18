@@ -149,22 +149,24 @@ class NCOOptimizer(AbstractOptimizer):
         """
         distance_matrix = ((1 - corr.fillna(0)) / 2.) ** .5
         silhouettes = pd.Series()
+
         max_num_clusters = self.max_num_clusters
         if max_num_clusters is None:
             # if the max number of clusters wasn't specified, declare it based on corr
             max_num_clusters = corr.shape[0] // 2
+
         for _ in range(self.num_clustering_trials):
             for i in range(2, max_num_clusters + 1):  # find optimal num clusters
                 kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1, random_state=42)
 
                 kmeans_ = kmeans_.fit(distance_matrix)
-                silh_ = silhouette_samples(distance_matrix, kmeans_.labels_)
+                silhouettes_ = silhouette_samples(distance_matrix, kmeans_.labels_)
 
-                new_calc = silh_.mean() / silh_.std()
+                new_calc = silhouettes_.mean() / silhouettes_.std()
                 old_calc = silhouettes.mean() / silhouettes.std()
 
                 if np.isnan(old_calc) or new_calc > old_calc:
-                    silhouettes, kmeans = silh_, kmeans_
+                    silhouettes, kmeans = silhouettes_, kmeans_
 
         clusters = {
             i: corr.columns[np.where(kmeans.labels_ == i)].tolist()

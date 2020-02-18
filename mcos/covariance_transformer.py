@@ -140,8 +140,8 @@ class CovarianceMatrixDeNoiser(AbstractCovarianceTransformer):
         """
         min_eigenvalue, max_eigenvalue = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
         eigenvalues = np.linspace(min_eigenvalue, max_eigenvalue, pts).flatten()
-        pdf = q / (2 * np.pi * var * eigenvalues) * (
-                (max_eigenvalue - eigenvalues) * (eigenvalues - min_eigenvalue)) ** .5
+        pdf = q / (2 * np.pi * var * eigenvalues) * \
+            ((max_eigenvalue - eigenvalues) * (eigenvalues - min_eigenvalue)) ** .5
         pdf = pdf.flatten()
         pdf = pd.Series(pdf, index=eigenvalues)
         return pdf
