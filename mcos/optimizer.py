@@ -114,25 +114,25 @@ class NCOOptimizer(AbstractOptimizer):
         # get correlation matrix
         corr = cov_to_corr(cov)
 
-        # get clusters
+        # find the optimal partition of clusters
         clusters = self._cluster_k_means_base(corr)
 
-        # calculate intra-cluster allocations based on the clusters
-        w_intra = pd.DataFrame(0, index=cov.index, columns=clusters.keys())
+        # calculate intra-cluster allocations by finding the optimal portfolio for each cluster
+        intra_cluster_allocations = pd.DataFrame(0, index=cov.index, columns=clusters.keys())
         for cluster_id, cluster in clusters.items():
             cov_ = cov.loc[cluster, cluster].values
             mu_ = None if mu is None else mu.loc[cluster].values.reshape(-1, 1)
-            w_intra.loc[cluster, cluster_id] = self._get_optimal_portfolio(cov_, mu_).flatten()
+            intra_cluster_allocations.loc[cluster, cluster_id] = self._get_optimal_portfolio(cov_, mu_).flatten()
 
         # reduce covariance matrix
-        cov = w_intra.T.dot(np.dot(cov, w_intra))
-        mu = None if mu is None else w_intra.T.dot(mu)
+        cov = intra_cluster_allocations.T.dot(np.dot(cov, intra_cluster_allocations))
+        mu = None if mu is None else intra_cluster_allocations.T.dot(mu)
 
-        # calculate inter_cluster allocations
-        w_inter = pd.Series(self._get_optimal_portfolio(cov, mu).flatten(), index=cov.index)
+        # calculate inter_cluster allocations on reduced covariance matrix
+        inter_cluster_allocations = pd.Series(self._get_optimal_portfolio(cov, mu).flatten(), index=cov.index)
 
         # final allocations are the dot-product of the intra-cluster allocations and the inter-cluster allocations
-        nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1).flatten()
+        nco = intra_cluster_allocations.mul(inter_cluster_allocations, axis=1).sum(axis=1).values.reshape(-1, 1).flatten()
         return nco
 
     def _cluster_k_means_base(self, corr: np.array) -> Dict[int, int]:
