@@ -53,6 +53,11 @@ class NCOOptimizer(AbstractOptimizer):
     """
 
     def __init__(self, max_num_clusters: int = None, num_clustering_trials=10):
+        """
+        Set optional variables used during calculations
+        :param max_num_clusters: max number of clusters to use during KMeans clustering
+        :param num_clustering_trials: number of times to try KMeans clustering with [1,max_num_clusters] clusters
+        """
         self.max_num_clusters = max_num_clusters
         self.num_clustering_trials = num_clustering_trials
 
@@ -63,6 +68,9 @@ class NCOOptimizer(AbstractOptimizer):
         :param cov: covariance matrix
         :return: min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
         """
+        if self.max_num_clusters is None:
+            # if the max number of clusters wasn't specified, declare it based on cov
+            self.max_num_clusters = cov.shape[0] // 2
         return self._nco(cov, mu)
 
     @property
@@ -111,19 +119,24 @@ class NCOOptimizer(AbstractOptimizer):
 
         # get clusters
         clusters = self._cluster_k_means_base(corr)
+
+        # calculate intra-cluster allocations based on the clusters
         w_intra = pd.DataFrame(0, index=cov.index, columns=clusters.keys())
         for cluster_id, cluster in clusters.items():
             cov_ = cov.loc[cluster, cluster].values
             mu_ = None if mu is None else mu.loc[cluster].values.reshape(-1, 1)
             w_intra.loc[cluster, cluster_id] = self._get_optimal_portfolio(cov_, mu_).flatten()
 
-        cov = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
+        # reduce covariance matrix
+        cov = w_intra.T.dot(np.dot(cov, w_intra))
         mu = None if mu is None else w_intra.T.dot(mu)
 
+        # calculate inter_cluster allocations
         w_inter = pd.Series(self._get_optimal_portfolio(cov, mu).flatten(), index=cov.index)
-        nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1)
 
-        return nco.flatten()
+        # final allocations are the dot-product of the intra-cluster allocations and the inter-cluster allocations
+        nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1).flatten()
+        return nco
 
     def _cluster_k_means_base(self, corr: np.array) -> Dict[int, int]:
         """
@@ -136,12 +149,8 @@ class NCOOptimizer(AbstractOptimizer):
         distance_matrix = ((1 - corr.fillna(0)) / 2.) ** .5
         silhouettes = pd.Series()
 
-        max_num_clusters = self.max_num_clusters
-        if max_num_clusters is None:
-            max_num_clusters = corr.shape[0] // 2
-
         for _ in range(self.num_clustering_trials):
-            for i in range(2, max_num_clusters + 1):  # find optimal num clusters
+            for i in range(2, self.max_num_clusters + 1):  # find optimal num clusters
                 kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1)
 
                 kmeans_ = kmeans_.fit(distance_matrix)
