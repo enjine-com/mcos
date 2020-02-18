@@ -52,28 +52,65 @@ class NCOOptimizer(AbstractOptimizer):
     Nested clustered optimization (NCO) optimizer based on section 4.3 of "A Robust Estimator of the Efficient Frontier
     """
 
+    def __init__(self, max_num_clusters: int = None, num_clustering_trials=10):
+        self.max_num_clusters = max_num_clusters
+        self.num_clustering_trials = num_clustering_trials
+
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
+        """
+        Get the optimal allocations of the portfolio via the NCO method
+        :param mu: vector of expected returns
+        :param cov: covariance matrix
+        :return: min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
+        """
         return self._nco(cov, mu)
 
     @property
     def name(self) -> str:
         return 'NCO'
 
-    def _nco(self, cov: np.array, mu: np.array = None, max_num_clusters: int = None) -> np.array:
+    def _nco(self, cov: np.array, mu: np.array) -> np.array:
         """
         Perform the NCO method described in section 4.3 of "A Robust Estimator of the Efficient Frontier"
+
+        Excerpt from section 4.3:
+
+        The NCO method estimates 𝜔̂∗ while controlling for the signal-induced estimation errors
+        explained in section 3.2. NCO works as follows:
+
+        First, we cluster the covariance matrix into subsets of highly-correlated variables.
+        One possible clustering algorithm is the partitioning method discussed in López de Prado and Lewis [2019],
+        but hierarchical methods may also be applied. The result is a partition of the original set,
+        that is, a collection of mutually disjoint nonempty subsets of variables.
+
+        Second, we compute optimal allocations for each of these clusters
+        separately. This allows us to collapse the original covariance matrix into a reduced covariance
+        matrix, where each cluster is represented as a single variable. The collapsed correlation matrix is
+        closer to an identity matrix than the original correlation matrix was, and therefore more
+        amenable to optimization problems (recall the discussion in section 3.2).
+
+        Third, we compute the optimal allocations across the reduced covariance matrix.
+
+        Fourth,
+        the final allocations are the dot-product of the intra-cluster allocations and the inter-cluster allocations.
+
+        By splitting the problem into two separate tasks, NCO contains the instability within each cluster:
+        the instability caused by intra-cluster noise does not propagate across clusters. See López de
+        Prado [2019] for examples, code and additional details regarding NCO.
+
         :param cov: Covariance matrix
         :param mu: Expected return vector
-        :param max_num_clusters: max number of clusters to use when performing KMeans clustering
         :return: min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
         """
         cov = pd.DataFrame(cov)
 
         if mu is not None:
             mu = pd.Series(mu)
-
+        # get correlation matrix
         corr = cov_to_corr(cov)
-        clusters = self._cluster_k_means_base(corr, max_num_clusters, n_init=10)
+
+        # get clusters
+        clusters = self._cluster_k_means_base(corr)
         w_intra = pd.DataFrame(0, index=cov.index, columns=clusters.keys())
         for cluster_id, cluster in clusters.items():
             cov_ = cov.loc[cluster, cluster].values
@@ -88,22 +125,22 @@ class NCOOptimizer(AbstractOptimizer):
 
         return nco.flatten()
 
-    def _cluster_k_means_base(self, corr: np.array, max_num_clusters: int = None, n_init: int = 10) -> Dict[int, int]:
+    def _cluster_k_means_base(self, corr: np.array) -> Dict[int, int]:
         """
         Using KMeans clustering, group the matrix into groups of highly correlated variables.
         The result is a partition of the original set,
         that is, a collection of mutually disjoint nonempty subsets of variables.
         :param corr: correlation matrix
-        :param max_num_clusters: max number of clusters to use
-        :param n_init: number of times to try finding the optimal number of clusters
         :return: The optimal partition of clusters
         """
         distance_matrix = ((1 - corr.fillna(0)) / 2.) ** .5
         silhouettes = pd.Series()
+
+        max_num_clusters = self.max_num_clusters
         if max_num_clusters is None:
             max_num_clusters = corr.shape[0] // 2
 
-        for _ in range(n_init):
+        for _ in range(self.num_clustering_trials):
             for i in range(2, max_num_clusters + 1):  # find optimal num clusters
                 kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1)
 
@@ -122,10 +159,9 @@ class NCOOptimizer(AbstractOptimizer):
 
         return clusters
 
-    def _get_optimal_portfolio(self, cov: np.array, mu: np.array = None) -> np.array:
+    def _get_optimal_portfolio(self, cov: np.array, mu: np.array) -> np.array:
         """
-        Gets an optimal portfolio
-        by taking the dot-product of the intra-cluster allocations and the inter-cluster allocations
+        compute the optimal allocations across the reduced covariance matrix
         :param cov: covariance matrix
         :param mu: vector of expected returns
         :return: optimal portfolio allocation
