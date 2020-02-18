@@ -68,9 +68,6 @@ class NCOOptimizer(AbstractOptimizer):
         :param cov: covariance matrix
         :return: min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
         """
-        if self.max_num_clusters is None:
-            # if the max number of clusters wasn't specified, declare it based on cov
-            self.max_num_clusters = cov.shape[0] // 2
         return self._nco(cov, mu)
 
     @property
@@ -148,9 +145,12 @@ class NCOOptimizer(AbstractOptimizer):
         """
         distance_matrix = ((1 - corr.fillna(0)) / 2.) ** .5
         silhouettes = pd.Series()
-
+        max_num_clusters = self.max_num_clusters
+        if max_num_clusters is None:
+            # if the max number of clusters wasn't specified, declare it based on corr
+            max_num_clusters = corr.shape[0] // 2
         for _ in range(self.num_clustering_trials):
-            for i in range(2, self.max_num_clusters + 1):  # find optimal num clusters
+            for i in range(2, max_num_clusters + 1):  # find optimal num clusters
                 kmeans_ = KMeans(n_clusters=i, n_jobs=1, n_init=1)
 
                 kmeans_ = kmeans_.fit(distance_matrix)
