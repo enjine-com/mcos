@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 from abc import ABC, abstractmethod
 from pypfopt.efficient_frontier import EfficientFrontier
@@ -47,7 +49,7 @@ class MarkowitzOptimizer(AbstractOptimizer):
 
 class NCOOptimizer(AbstractOptimizer):
     """
-    NCO Optimizer
+    Nested clustered optimization (NCO) optimizer based on section 4.3 of "A Robust Estimator of the Efficient Frontier
     """
 
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
@@ -57,7 +59,14 @@ class NCOOptimizer(AbstractOptimizer):
     def name(self) -> str:
         return 'NCO'
 
-    def _nco(self, cov, mu=None, max_num_clusters=None):
+    def _nco(self, cov: np.array, mu: np.array = None, max_num_clusters: int = None) -> np.array:
+        """
+        Perform the NCO method described in section 4.3 of "A Robust Estimator of the Efficient Frontier"
+        :param cov: Covariance matrix
+        :param mu: Expected return vector
+        :param max_num_clusters: max number of clusters to use when performing KMeans clustering
+        :return: min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
+        """
         cov = pd.DataFrame(cov)
 
         if mu is not None:
@@ -69,17 +78,26 @@ class NCOOptimizer(AbstractOptimizer):
         for cluster_id, cluster in clusters.items():
             cov_ = cov.loc[cluster, cluster].values
             mu_ = None if mu is None else mu.loc[cluster].values.reshape(-1, 1)
-            w_intra.loc[cluster, cluster_id] = self._opt_port(cov_, mu_).flatten()
+            w_intra.loc[cluster, cluster_id] = self._get_optimal_portfolio(cov_, mu_).flatten()
 
         cov = w_intra.T.dot(np.dot(cov, w_intra))  # reduce covariance matrix
         mu = None if mu is None else w_intra.T.dot(mu)
 
-        w_inter = pd.Series(self._opt_port(cov, mu).flatten(), index=cov.index)
+        w_inter = pd.Series(self._get_optimal_portfolio(cov, mu).flatten(), index=cov.index)
         nco = w_intra.mul(w_inter, axis=1).sum(axis=1).values.reshape(-1, 1)
 
         return nco.flatten()
 
-    def _cluster_k_means_base(self, corr, max_num_clusters=None, n_init=10):
+    def _cluster_k_means_base(self, corr: np.array, max_num_clusters: int = None, n_init: int = 10) -> Dict[int, int]:
+        """
+        Using KMeans clustering, group the matrix into groups of highly correlated variables.
+        The result is a partition of the original set,
+        that is, a collection of mutually disjoint nonempty subsets of variables.
+        :param corr: correlation matrix
+        :param max_num_clusters: max number of clusters to use
+        :param n_init: number of times to try finding the optimal number of clusters
+        :return: The optimal partition of clusters
+        """
         distance_matrix = ((1 - corr.fillna(0)) / 2.) ** .5
         silhouettes = pd.Series()
         if max_num_clusters is None:
@@ -104,7 +122,14 @@ class NCOOptimizer(AbstractOptimizer):
 
         return clusters
 
-    def _opt_port(self, cov, mu=None):
+    def _get_optimal_portfolio(self, cov: np.array, mu: np.array = None) -> np.array:
+        """
+        Gets an optimal portfolio
+        by taking the dot-product of the intra-cluster allocations and the inter-cluster allocations
+        :param cov: covariance matrix
+        :param mu: vector of expected returns
+        :return: optimal portfolio allocation
+        """
         inv = np.linalg.inv(cov)
         ones = np.ones(shape=(inv.shape[0], 1))
 
