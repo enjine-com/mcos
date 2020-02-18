@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import List
 
-from mcos.covariance_transformer import CovarianceMatrixDeNoiser
+from mcos.covariance_transformer import DeNoiserCovarianceTransformer, AbstractCovarianceTransformer
 from mcos.error_estimator import AbstractErrorEstimator
 from mcos.observation_simulator import AbstractObservationSimulator
 from mcos.optimizer import AbstractOptimizer
@@ -13,15 +13,15 @@ def simulate_optimizations(
         n_sims: int,
         optimizers: List[AbstractOptimizer],
         error_estimator: AbstractErrorEstimator,
-        de_noise: bool = True
+        covariance_transformers: List[AbstractCovarianceTransformer]
 ) -> pd.DataFrame:
     error_estimates = {optimizer.name: [] for optimizer in optimizers}
 
     for i in range(n_sims):
         mu_hat, cov_hat = obs_simulator.simulate()
 
-        if de_noise:
-            cov_hat = CovarianceMatrixDeNoiser().transform(cov_hat, obs_simulator.n_observations)
+        for transformer in covariance_transformers:
+            cov_hat = transformer.transform(cov_hat, obs_simulator.n_observations)
 
         for optimizer in optimizers:
             allocation = optimizer.allocate(mu_hat, cov_hat)
