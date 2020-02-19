@@ -4,13 +4,15 @@ from numpy.testing import assert_almost_equal
 from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import sample_cov
 
-from mcos.error_estimator import ExpectedOutcomeErrorEstimator, VarianceErrorEstimator
+from mcos.error_estimator import ExpectedOutcomeErrorEstimator, VarianceErrorEstimator, SharpeRatioErrorEstimator
+
 
 class TestErrorEstimator:
-    
+
     @pytest.mark.parametrize('estimator, expected_value', [
         (ExpectedOutcomeErrorEstimator(), 0.00277877),
-        (VarianceErrorEstimator(), 0.0044184)
+        (VarianceErrorEstimator(), 0.0044184),
+        (SharpeRatioErrorEstimator(), 0.04180305)
     ])
     def test_estimate(self, estimator, expected_value, prices_df):
         mu = mean_historical_return(prices_df).values
