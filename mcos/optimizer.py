@@ -63,19 +63,6 @@ class NCOOptimizer(AbstractOptimizer):
 
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         """
-        Get the optimal allocations of the portfolio via the NCO method
-        :param mu: vector of expected returns
-        :param cov: covariance matrix
-        :return: min variance portfolio if mu is None, max sharpe ratio portfolio if mu is not None
-        """
-        return self._nco(cov, mu)
-
-    @property
-    def name(self) -> str:
-        return 'NCO'
-
-    def _nco(self, cov: np.array, mu: np.array) -> np.array:
-        """
         Perform the NCO method described in section 4.3 of "A Robust Estimator of the Efficient Frontier"
 
         Excerpt from section 4.3:
@@ -132,10 +119,10 @@ class NCOOptimizer(AbstractOptimizer):
         inter_cluster_allocations = pd.Series(self._get_optimal_portfolio(cov, mu), index=cov.index)
 
         # final allocations are the dot-product of the intra-cluster allocations and the inter-cluster allocations
-        nco = intra_cluster_allocations\
-            .mul(inter_cluster_allocations, axis=1)\
-            .sum(axis=1).values\
-            .reshape(-1, 1)\
+        nco = intra_cluster_allocations \
+            .mul(inter_cluster_allocations, axis=1) \
+            .sum(axis=1).values \
+            .reshape(-1, 1) \
             .flatten()
         return nco
 
@@ -191,3 +178,7 @@ class NCOOptimizer(AbstractOptimizer):
         w = np.dot(inv, mu)
         w /= np.dot(ones.T, w)
         return w.flatten()
+
+    @property
+    def name(self) -> str:
+        return 'NCO'
