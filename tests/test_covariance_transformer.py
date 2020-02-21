@@ -17,8 +17,12 @@ def test_cov_to_corr(prices_df):
     covariance_matrix = sample_cov(prices_df).values
     correlation_matrix = cov_to_corr(covariance_matrix)
     assert correlation_matrix.shape == covariance_matrix.shape
+    # values should be between [-1,1]
     assert correlation_matrix.max() <= 1
     assert correlation_matrix.min() >= -1
+    for i in range(len(correlation_matrix)):
+        # the diagonal should all be 1 since an asset is perfectly correlated with itself
+        assert_almost_equal(correlation_matrix[i, i], 1.0)
 
 
 @pytest.fixture
