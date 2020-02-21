@@ -15,7 +15,7 @@ class AbstractObservationSimulator(ABC):
         pass
 
 
-class MuCovLedoitWolfObservationSimulator(ObservationSimulator):
+class MuCovLedoitWolfObservationSimulator(AbstractObservationSimulator):
 
     def __init__(self, mu: np.array, cov: np.array, n_observations: int):
         self.mu = mu
@@ -27,7 +27,7 @@ class MuCovLedoitWolfObservationSimulator(ObservationSimulator):
         return x.mean(axis=0).reshape(-1, 1), LedoitWolf().fit(x).covariance_
 
 
-class MuCovObservationSimulator(ObservationSimulator):
+class MuCovObservationSimulator(AbstractObservationSimulator):
 
     def __init__(self, mu: np.array, cov: np.array, n_observations: int):
         self.mu = mu

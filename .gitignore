@@ -130,3 +130,9 @@ dmypy.json
 
 # vscode
 .vscode
+
+# pycharm
+.idea
+
+# jupyter notebook
+*.ipynb
