@@ -38,7 +38,7 @@ class SharpeRatioErrorEstimator(AbstractErrorEstimator):
     def estimate(self, mu: np.array, cov: np.array, allocation: np.array, optimal_allocation: np.array) -> float:
         mean_difference_expected_outcome = _mean_difference_expected_outcome(optimal_allocation, allocation, mu)
         mean_difference_variance = _mean_difference_variance(cov, allocation, optimal_allocation)
-        return mean_difference_expected_outcome / mean_difference_variance ** .5
+        return mean_difference_expected_outcome / np.sqrt(mean_difference_variance)
 
 
 def _mean_difference_expected_outcome(optimal_allocation: np.array, allocation: np.array, mu: np.array) -> float:
