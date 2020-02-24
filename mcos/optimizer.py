@@ -61,6 +61,10 @@ class NCOOptimizer(AbstractOptimizer):
         self.max_num_clusters = max_num_clusters
         self.num_clustering_trials = num_clustering_trials
 
+    @property
+    def name(self) -> str:
+        return 'NCO'
+
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         """
         Perform the NCO method described in section 4.3 of "A Robust Estimator of the Efficient Frontier"
@@ -119,12 +123,11 @@ class NCOOptimizer(AbstractOptimizer):
         inter_cluster_allocations = pd.Series(self._get_optimal_portfolio(cov, mu), index=cov.index)
 
         # final allocations are the dot-product of the intra-cluster allocations and the inter-cluster allocations
-        nco = intra_cluster_allocations \
+        return intra_cluster_allocations \
             .mul(inter_cluster_allocations, axis=1) \
             .sum(axis=1).values \
             .reshape(-1, 1) \
             .flatten()
-        return nco
 
     def _cluster_k_means_base(self, corr: np.array) -> Dict[int, int]:
         """
@@ -178,7 +181,3 @@ class NCOOptimizer(AbstractOptimizer):
         w = np.dot(inv, mu)
         w /= np.dot(ones.T, w)
         return w.flatten()
-
-    @property
-    def name(self) -> str:
-        return 'NCO'
