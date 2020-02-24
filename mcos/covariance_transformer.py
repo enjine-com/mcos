@@ -50,7 +50,7 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         q = n_observations / cov.shape[1]
 
         # get correlation matrix based on covariance matrix
-        correlation_matrix = self._cov_to_corr(cov)
+        correlation_matrix = cov_to_corr(cov)
 
         # Get eigenvalues and eigenvectors in the correlation matrix
         eigenvalues, eigenvectors = self._get_PCA(correlation_matrix)
@@ -65,17 +65,6 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         # recover covariance matrix from correlation matrix
         de_noised_covariance_matrix = self._corr_to_cov(correlation_matrix, np.diag(cov) ** .5)
         return de_noised_covariance_matrix
-
-    def _cov_to_corr(self, cov: np.array) -> np.array:
-        """
-        Derive the correlation matrix from a covariance matrix
-        :param cov: covariance matrix
-        :return: correlation matrix
-        """
-        std = np.sqrt(np.diag(cov))
-        corr = cov / np.outer(std, std)
-        corr[corr < -1], corr[corr > 1] = -1, 1  # numerical error
-        return corr
 
     def _get_PCA(self, matrix: np.array) -> (np.array, np.array):
         """
@@ -141,8 +130,8 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         """
         min_eigenvalue, max_eigenvalue = var * (1 - (1. / q) ** .5) ** 2, var * (1 + (1. / q) ** .5) ** 2
         eigenvalues = np.linspace(min_eigenvalue, max_eigenvalue, pts).flatten()
-        pdf = q / (2 * np.pi * var * eigenvalues) * (
-                (max_eigenvalue - eigenvalues) * (eigenvalues - min_eigenvalue)) ** .5
+        pdf = q / (2 * np.pi * var * eigenvalues) * \
+              ((max_eigenvalue - eigenvalues) * (eigenvalues - min_eigenvalue)) ** .5
         pdf = pdf.flatten()
         pdf = pd.Series(pdf, index=eigenvalues)
         return pdf
@@ -185,7 +174,7 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         eigenvalues_[n_facts:] = eigenvalues_[n_facts:].sum() / float(eigenvalues_.shape[0] - n_facts)
         eigenvalues_ = np.diag(eigenvalues_)
         corr = np.dot(eigenvectors, eigenvalues_).dot(eigenvectors.T)
-        corr = self._cov_to_corr(corr)
+        corr = cov_to_corr(corr)
         return corr
 
     def _corr_to_cov(self, corr: np.array, std: np.array) -> np.array:
@@ -197,3 +186,15 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         """
         cov = corr * np.outer(std, std)
         return cov
+
+
+def cov_to_corr(cov: np.array) -> np.array:
+    """
+    Derive the correlation matrix from a covariance matrix
+    :param cov: covariance matrix
+    :return: correlation matrix
+    """
+    std = np.sqrt(np.diag(cov))
+    corr = cov / np.outer(std, std)
+    corr[corr < -1], corr[corr > 1] = -1, 1  # numerical error
+    return corr
