@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 from abc import ABC, abstractmethod
@@ -6,9 +6,9 @@ from pypfopt.efficient_frontier import EfficientFrontier
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
-from mcos.covariance_transformer import cov_to_corr
-from typing import List
 import scipy.cluster.hierarchy as sch
+from mcos.covariance_transformer import cov_to_corr
+
 
 
 
@@ -192,7 +192,24 @@ class HRPOptimizer(AbstractOptimizer):
     """
 
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
-        return self.get_hrp_weights(cov)
+        """
+       Gets position weights according to the hierarchical risk parity method as outlined in Marcos Lopez de Prado's
+       book
+       :param cov: covariance matrix
+       :return: List of position weights. Note that lru_cache has problems caching numpy arrays.
+       """
+        corr = cov_to_corr(cov)
+
+        dist = self._correlation_distance(corr)
+
+        link = sch.linkage(dist, 'single')  # this step also calculates the Euclidean distance of 'dist'
+
+        sorted_indices = self._quasi_diagonal_cluster_sequence(link)
+        ret = self._hrp_weights(cov, sorted_indices)
+        if ret.sum() > 1.001 or ret.sum() < 0.999:
+            raise ValueError("Portfolio allocations don't sum to 1.")
+
+        return ret.tolist()
 
     @property
     def name(self) -> str:
@@ -263,32 +280,3 @@ class HRPOptimizer(AbstractOptimizer):
         return dist
 
 
-    def _cov2corr(self, cov: np.ndarray) -> np.ndarray:
-        # convert covariance matrix to correlation matrix
-        cov = np.asanyarray(cov)
-        std_ = np.sqrt(np.diag(cov))
-        return cov / np.outer(std_, std_)
-
-
-    def hierarchical_risk_parity_portfolio(self, cov) -> List[float]:
-        """
-        Gets position weights according to the hierarchical risk parity method as outlined in Marcos Lopez de Prado's
-        book
-        :param cov: covariance matrix
-        :return: List of position weights. Note that lru_cache has problems caching numpy arrays.
-        """
-        corr = self._cov2corr(cov)
-
-        dist = self._correlation_distance(corr)
-
-        link = sch.linkage(dist, 'single')  # this step also calculates the Euclidean distance of 'dist'
-
-        sorted_indices = self._quasi_diagonal_cluster_sequence(link)
-        ret = self._hrp_weights(cov, sorted_indices)
-        if ret.sum() > 1.001 or ret.sum() < 0.999:
-            raise ValueError("Portfolio allocations don't sum to 1.")
-
-        return ret.tolist()
-
-    def get_hrp_weights(self, cov):
-        return self.hierarchical_risk_parity_portfolio(cov)
