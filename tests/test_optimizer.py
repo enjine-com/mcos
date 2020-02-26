@@ -2,8 +2,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import sample_cov
-
-from mcos.optimizer import MarkowitzOptimizer, NCOOptimizer
+from mcos.optimizer import MarkowitzOptimizer, NCOOptimizer, HRPOptimizer
+from numpy.testing import assert_almost_equal
 
 
 class TestMarkowitzOptimizer:
@@ -25,7 +25,7 @@ class TestMarkowitzOptimizer:
         assert MarkowitzOptimizer().name == 'markowitz'
 
 
-class TestNCOOptimizier:
+class TestNCOOptimizer:
 
     def test_allocate_max_sharpe(self, prices_df):
         mu = mean_historical_return(prices_df).values
@@ -48,3 +48,15 @@ class TestNCOOptimizier:
 
     def test_name(self):
         assert NCOOptimizer().name == 'NCO'
+
+
+class TestHRPOptimizer:
+
+    def test_allocate(self):
+        cov = np.array([[0.0625, 0.0225, -0.0125, -0.02], [0.0225, 0.09, 0.0, 0.108],
+                        [-0.0125, 0.0, 0.25, 0.14], [-0.02, 0.108, 0.14, 0.16]])
+        results = HRPOptimizer().allocate(np.array([0]), cov)
+        assert_almost_equal(results, np.array([0.5600517, 0.1400129, 0.1919586, 0.1079767]))
+
+    def test_name(self):
+        assert HRPOptimizer().name == 'HRP'

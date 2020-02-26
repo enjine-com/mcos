@@ -7,6 +7,9 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
 from mcos.covariance_transformer import cov_to_corr
+from typing import List
+import scipy.cluster.hierarchy as sch
+
 
 
 class AbstractOptimizer(ABC):
@@ -45,7 +48,6 @@ class MarkowitzOptimizer(AbstractOptimizer):
     @property
     def name(self) -> str:
         return 'markowitz'
-
 
 class NCOOptimizer(AbstractOptimizer):
     """
@@ -181,3 +183,112 @@ class NCOOptimizer(AbstractOptimizer):
         w = np.dot(inv, mu)
         w /= np.dot(ones.T, w)
         return w.flatten()
+
+
+class HRPOptimizer(AbstractOptimizer):
+    """
+    Hierarichal Risk Parity Optimizer based on Dr. Marcos Lopez de Prado's paper 'Building Diversified Portfolios that
+     Outperform Out-of-Sample'
+    """
+
+    def allocate(self, mu: np.array, cov: np.array) -> np.array:
+        return self.get_hrp_weights(cov)
+
+    @property
+    def name(self) -> str:
+        return 'HRP'
+
+    def _inverse_variance_weights(self,cov: np.ndarray) -> np.ndarray:
+        # Compute the inverse-variance portfolio
+        ivp = 1. / np.diag(cov)
+        ivp /= ivp.sum()
+        return ivp
+
+    def _cluster_sub_sequence(self, clustering_data: pd.DataFrame, combined_node: int) -> List:
+        # recurisvely extracts the list of cluster indices that that belong to the children of combined_node
+        row = clustering_data[clustering_data['combined_node'] == combined_node]
+        if row.empty:
+            return [combined_node]
+
+        return self._cluster_sub_sequence(clustering_data, row.iloc[0]['node1']) + \
+               self._cluster_sub_sequence(clustering_data, row.iloc[0]['node2'])
+
+
+    def _quasi_diagonal_cluster_sequence(self, link: np.ndarray) -> List:
+        # Sort clustered items by distance
+        num_items = link[-1, 3].astype('int')
+        clustering_data = pd.DataFrame(link[:, 0:2].astype('int'), columns=['node1', 'node2'])
+        clustering_data['combined_node'] = clustering_data.index + num_items
+        return self._cluster_sub_sequence(clustering_data, clustering_data.iloc[-1]['combined_node'])
+
+
+    def _cluster_var(self, cov: np.ndarray) -> np.ndarray:
+        # calculates the overall variance assuming the inverse variance portfolio weights of the constituents
+        w_ = self._inverse_variance_weights(cov).reshape(-1, 1)
+        return np.dot(np.dot(w_.T, cov), w_)[0, 0]
+
+
+    def _hrp_weights(self, cov: np.ndarray, sorted_indices: List) -> np.ndarray:
+        """
+        Gets position weights using hierarchical risk parity
+        :param cov: covariance matrix
+        :param sorted_indices: clustering scheme
+        :return: array of position weights
+        """
+        if len(sorted_indices) == 0:
+            raise ValueError('sorted_indices is empty')
+
+        if len(sorted_indices) == 1:
+            return np.array([1.])
+
+        split_indices = np.array_split(np.array(sorted_indices), 2)
+
+        left_var = self._cluster_var(cov[:, split_indices[0]][split_indices[0]])
+        right_var = self._cluster_var(cov[:, split_indices[1]][split_indices[1]])
+
+        alloc_factor = 1. - left_var / (left_var + right_var)
+
+        return np.concatenate([
+            np.multiply(self._hrp_weights(cov, split_indices[0]), alloc_factor),
+            np.multiply(self._hrp_weights(cov, split_indices[1]), 1. - alloc_factor)
+        ])
+
+
+    def _correlation_distance(self, corr: np.ndarray) -> np.ndarray:
+        # A distance matrix based on correlation, where 0<=d[i,j]<=1
+        # This is a proper distance metric
+        dist = np.sqrt((1. - corr) / 2.)
+        for i in range(dist.shape[0]):
+            dist[i, i] = 0.  # diagonals should always be 0, but sometimes it's only close to 0
+        return dist
+
+
+    def _cov2corr(self, cov: np.ndarray) -> np.ndarray:
+        # convert covariance matrix to correlation matrix
+        cov = np.asanyarray(cov)
+        std_ = np.sqrt(np.diag(cov))
+        return cov / np.outer(std_, std_)
+
+
+    def hierarchical_risk_parity_portfolio(self, cov) -> List[float]:
+        """
+        Gets position weights according to the hierarchical risk parity method as outlined in Marcos Lopez de Prado's
+        book
+        :param cov: covariance matrix
+        :return: List of position weights. Note that lru_cache has problems caching numpy arrays.
+        """
+        corr = self._cov2corr(cov)
+
+        dist = self._correlation_distance(corr)
+
+        link = sch.linkage(dist, 'single')  # this step also calculates the Euclidean distance of 'dist'
+
+        sorted_indices = self._quasi_diagonal_cluster_sequence(link)
+        ret = self._hrp_weights(cov, sorted_indices)
+        if ret.sum() > 1.001 or ret.sum() < 0.999:
+            raise ValueError("Portfolio allocations don't sum to 1.")
+
+        return ret.tolist()
+
+    def get_hrp_weights(self, cov):
+        return self.hierarchical_risk_parity_portfolio(cov)
