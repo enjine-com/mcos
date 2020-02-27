@@ -10,8 +10,6 @@ import scipy.cluster.hierarchy as sch
 from mcos.covariance_transformer import cov_to_corr
 
 
-
-
 class AbstractOptimizer(ABC):
     """Helper class that provides a standard way to create a new Optimizer using inheritance"""
 
@@ -48,6 +46,7 @@ class MarkowitzOptimizer(AbstractOptimizer):
     @property
     def name(self) -> str:
         return 'markowitz'
+
 
 class NCOOptimizer(AbstractOptimizer):
     """
@@ -196,7 +195,8 @@ class HRPOptimizer(AbstractOptimizer):
        Gets position weights according to the hierarchical risk parity method as outlined in Marcos Lopez de Prado's
        book
        :param cov: covariance matrix
-       :return: List of position weights. Note that lru_cache has problems caching numpy arrays.
+       :param mu: vector of expected returns
+       :return: List of position weights.
        """
         corr = cov_to_corr(cov)
 
@@ -215,7 +215,7 @@ class HRPOptimizer(AbstractOptimizer):
     def name(self) -> str:
         return 'HRP'
 
-    def _inverse_variance_weights(self,cov: np.ndarray) -> np.ndarray:
+    def _inverse_variance_weights(self, cov: np.ndarray) -> np.ndarray:
         # Compute the inverse-variance portfolio
         ivp = 1. / np.diag(cov)
         ivp /= ivp.sum()
@@ -228,8 +228,7 @@ class HRPOptimizer(AbstractOptimizer):
             return [combined_node]
 
         return self._cluster_sub_sequence(clustering_data, row.iloc[0]['node1']) + \
-               self._cluster_sub_sequence(clustering_data, row.iloc[0]['node2'])
-
+            self._cluster_sub_sequence(clustering_data, row.iloc[0]['node2'])
 
     def _quasi_diagonal_cluster_sequence(self, link: np.ndarray) -> List:
         # Sort clustered items by distance
@@ -238,12 +237,10 @@ class HRPOptimizer(AbstractOptimizer):
         clustering_data['combined_node'] = clustering_data.index + num_items
         return self._cluster_sub_sequence(clustering_data, clustering_data.iloc[-1]['combined_node'])
 
-
     def _cluster_var(self, cov: np.ndarray) -> np.ndarray:
         # calculates the overall variance assuming the inverse variance portfolio weights of the constituents
         w_ = self._inverse_variance_weights(cov).reshape(-1, 1)
         return np.dot(np.dot(w_.T, cov), w_)[0, 0]
-
 
     def _hrp_weights(self, cov: np.ndarray, sorted_indices: List) -> np.ndarray:
         """
@@ -270,7 +267,6 @@ class HRPOptimizer(AbstractOptimizer):
             np.multiply(self._hrp_weights(cov, split_indices[1]), 1. - alloc_factor)
         ])
 
-
     def _correlation_distance(self, corr: np.ndarray) -> np.ndarray:
         # A distance matrix based on correlation, where 0<=d[i,j]<=1
         # This is a proper distance metric
@@ -278,5 +274,3 @@ class HRPOptimizer(AbstractOptimizer):
         for i in range(dist.shape[0]):
             dist[i, i] = 0.  # diagonals should always be 0, but sometimes it's only close to 0
         return dist
-
-

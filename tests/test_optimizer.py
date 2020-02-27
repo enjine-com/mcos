@@ -53,13 +53,11 @@ class TestNCOOptimizer:
 class TestHRPOptimizer:
 
     def test_allocate(self, prices_df):
-        # cov = np.array([[0.0625, 0.0225, -0.0125, -0.02], [0.0225, 0.09, 0.0, 0.108],
-        #                 [-0.0125, 0.0, 0.25, 0.14], [-0.02, 0.108, 0.14, 0.16]])
-
         mu = mean_historical_return(prices_df).values
         cov = sample_cov(prices_df).values
-        results = HRPOptimizer().allocate(mu, cov)
-        assert_almost_equal(results, np.array(
+
+        weights = HRPOptimizer().allocate(mu, cov)
+        assert_almost_equal(weights, np.array(
                 [0.02182165, 0.01831474, 0.01928443, 0.08689840, 0.04869276, 0.07706293,
                  0.02267915, 0.10417196, 0.10925653, 0.02917370, 0.07311320, 0.04267337,
                  0.06600238, 0.04105381, 0.02740903, 0.03910023, 0.02767476, 0.01861446,
