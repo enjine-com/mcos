@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import sample_cov
-from mcos.optimizer import MarkowitzOptimizer, NCOOptimizer, HRPOptimizer
+from mcos.optimizer import MarkowitzOptimizer, NCOOptimizer, HRPOptimizer, RiskParityOptimizer
 from numpy.testing import assert_almost_equal
 
 
@@ -65,3 +65,33 @@ class TestHRPOptimizer:
 
     def test_name(self):
         assert HRPOptimizer().name == 'HRP'
+
+
+class TestRiskParityOptimizer:
+
+    mu = [0.14, 0.12, 0.15, 0.07]
+
+    cov = [[1.23, 0.375, 0.7, 0.3],
+           [0.375, 1.22, 0.72, 0.135],
+           [0.7, 0.72, 3.21, -0.32],
+           [0.3, 0.135, -0.32, 0.52]]
+
+    def test_allocate(self):
+        x_t = [0.25, 0.25, 0.25, 0.25]  # your risk budget percent of total portfolio risk (equal risk)
+        w0 = [1/4]*4
+
+        weights = RiskParityOptimizer().allocate(self.mu, self.cov, x_t, w0)
+        assert_almost_equal(weights, np.array(
+            [0.19543974,  0.21521557,  0.16260951,  0.42673519]))
+
+    def test_allocate_custom_risk_budget(self):
+        x_t = [0.25, 0.25, 0.25, 0.25]  # your risk budget percent of total portfolio risk (equal risk)
+        w0 = [1/4]*4
+
+        weights = RiskParityOptimizer().allocate(self.mu, self.cov, x_t, w0)
+        assert_almost_equal(weights, np.array(
+            [0.22837243, 0.25116466, 0.08875776, 0.43170515]))
+
+    def test_name(self):
+        assert RiskParityOptimizer().name == 'Risk Parity'
+
