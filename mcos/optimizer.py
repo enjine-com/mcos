@@ -1,3 +1,4 @@
+from __future__ import division
 from typing import Dict, List
 
 import numpy as np
@@ -7,7 +8,10 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
 import scipy.cluster.hierarchy as sch
+from scipy.optimize import minimize
+from matplotlib import pyplot as plt
 from mcos.covariance_transformer import cov_to_corr
+from numpy.linalg import inv, pinv
 
 
 class AbstractOptimizer(ABC):
@@ -280,3 +284,69 @@ class HRPOptimizer(AbstractOptimizer):
         for i in range(dist.shape[0]):
             dist[i, i] = 0.  # diagonals should always be 0, but sometimes it's only close to 0
         return dist
+
+
+class RiskParityOptimizer(AbstractOptimizer):
+    """
+     Risk Parity Optimizer
+    """
+
+    def allocate(self, mu: np.array, cov: np.array, x_t, w0) -> np.array:
+        """
+       Gets position weights according to the risk parity method
+       :param cov: covariance matrix
+       :param mu: vector of expected returns
+       :return: List of position weights.
+       """
+        ret = self._rp_weights(cov, x_t, w0)
+        return ret
+
+    @property
+    def name(self) -> str:
+        return 'Risk Parity'
+
+    # risk budgeting optimization
+    def _calculate_portfolio_var(self, w, cov):
+        # function that calculates portfolio risk
+        w = np.matrix(w)
+        return (w * cov * w.T)[0, 0]
+
+    def _calculate_risk_contribution(self, w, cov):
+        # function that calculates asset contribution to total risk
+        w = np.matrix(w)
+        sigma = np.sqrt(self._calculate_portfolio_var(w, cov))
+        # Marginal Risk Contribution
+        MRC = cov * w.T
+        # Risk Contribution
+        RC = np.multiply(MRC, w.T) / sigma
+        return RC
+
+    def _risk_budget_objective(self, x, pars):
+        # calculate portfolio risk
+        cov = pars[0]  # covariance table
+        x_t = pars[1]  # risk target in percent of portfolio risk
+        sig_p = np.sqrt(self._calculate_portfolio_var(x, cov))  # portfolio sigma
+        risk_target = np.asmatrix(np.multiply(sig_p, x_t))
+        asset_RC = self._calculate_risk_contribution(x, cov)
+        J = sum(np.square(asset_RC - risk_target.T))[0, 0]  # sum of squared error
+        return J
+
+    def _total_weight_constraint(x):
+        return np.sum(x) - 1.0
+
+    def _long_only_constraint(x):
+        return x
+
+    def _rp_weights(self, cov, x_t, w0):
+        # x_t = [0.25, 0.25, 0.25, 0.25]  # your risk budget percent of total portfolio risk (equal risk)
+        cons = ({'type': 'eq', 'fun': self._total_weight_constraint},
+            {'type': 'ineq', 'fun': self._long_only_constraint})
+
+        # w0 = [1/4]*4
+
+        # What is w0? Is it the optional target risk allocation?
+        res = minimize(self._risk_budget_objective, w0, args=[cov, x_t], method='SLSQP', constraints=cons, options={'disp': True})
+        w_rb = np.asmatrix(res.x)
+
+        return w_rb
+
