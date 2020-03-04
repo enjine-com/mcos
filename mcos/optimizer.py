@@ -302,7 +302,7 @@ class RiskParityOptimizer(AbstractOptimizer):
        :return: List of position weights.
        """
 
-        if (self.x_t is None):
+        if self.x_t is None:
             x_t = [1 / len(cov[0])] * len(cov[0])
         else:
             x_t = self.x_t
