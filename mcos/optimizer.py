@@ -238,7 +238,7 @@ class HRPOptimizer(AbstractOptimizer):
             return [combined_node]
 
         return self._cluster_sub_sequence(clustering_data, row.iloc[0]['node1']) + \
-            self._cluster_sub_sequence(clustering_data, row.iloc[0]['node2'])
+               self._cluster_sub_sequence(clustering_data, row.iloc[0]['node2'])
 
     def _quasi_diagonal_cluster_sequence(self, link: np.ndarray) -> List:
         # Sort clustered items by distance
@@ -291,14 +291,23 @@ class RiskParityOptimizer(AbstractOptimizer):
      Risk Parity Optimizer
     """
 
-    def allocate(self, mu: np.array, cov: np.array, x_t, w0) -> np.array:
+    def __init__(self, x_t: np.array = None):
+        self.x_t = x_t
+
+    def allocate(self, mu: np.array, cov: np.array) -> np.array:
         """
        Gets position weights according to the risk parity method
        :param cov: covariance matrix
        :param mu: vector of expected returns
        :return: List of position weights.
        """
-        ret = self._rp_weights(cov, x_t, w0)
+
+        if (self.x_t is None):
+            x_t = [1 / len(cov[0])] * len(cov[0])
+        else:
+            x_t = self.x_t
+
+        ret = self._rp_weights(cov, x_t)
         return ret
 
     @property
@@ -337,16 +346,16 @@ class RiskParityOptimizer(AbstractOptimizer):
     def _long_only_constraint(x):
         return x
 
-    def _rp_weights(self, cov, x_t, w0):
-        # x_t = [0.25, 0.25, 0.25, 0.25]  # your risk budget percent of total portfolio risk (equal risk)
+    def _rp_weights(self, cov, x_t):
+        w0 = x_t
         cons = ({'type': 'eq', 'fun': self._total_weight_constraint},
-            {'type': 'ineq', 'fun': self._long_only_constraint})
+                {'type': 'ineq', 'fun': self._long_only_constraint})
 
         # w0 = [1/4]*4
 
         # What is w0? Is it the optional target risk allocation?
-        res = minimize(self._risk_budget_objective, w0, args=[cov, x_t], method='SLSQP', constraints=cons, options={'disp': True})
+        res = minimize(self._risk_budget_objective, w0, args=[cov, x_t], method='SLSQP', constraints=cons,
+                       options={'disp': True})
         w_rb = np.asmatrix(res.x)
 
         return w_rb
-
