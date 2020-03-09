@@ -209,7 +209,7 @@ class HRPOptimizer(AbstractOptimizer):
         if ret.sum() > 1.001 or ret.sum() < 0.999:
             raise ValueError("Portfolio allocations don't sum to 1.")
 
-        return ret.tolist()
+        return ret
 
     @property
     def name(self) -> str:
