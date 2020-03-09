@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import List
 
-from mcos.covariance_transformer import DeNoiserCovarianceTransformer, AbstractCovarianceTransformer
+from mcos.covariance_transformer import AbstractCovarianceTransformer
 from mcos.error_estimator import AbstractErrorEstimator
 from mcos.observation_simulator import AbstractObservationSimulator
 from mcos.optimizer import AbstractOptimizer

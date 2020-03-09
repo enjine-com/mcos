@@ -173,7 +173,7 @@ class NCOOptimizer(AbstractOptimizer):
         :param mu: vector of expected returns
         :return: optimal portfolio allocation
         """
-        inv = np.linalg.inv(cov)
+        inv = np.linalg.pinv(cov)
         ones = np.ones(shape=(inv.shape[0], 1))
 
         if mu is None:
