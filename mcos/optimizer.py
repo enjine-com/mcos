@@ -102,7 +102,7 @@ class NCOOptimizer(AbstractOptimizer):
         cov = pd.DataFrame(cov)
 
         if mu is not None:
-            mu = pd.Series(mu)
+            mu = pd.Series(mu.flatten())
         # get correlation matrix
         corr = cov_to_corr(cov)
 

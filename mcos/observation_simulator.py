@@ -25,7 +25,7 @@ class MuCovLedoitWolfObservationSimulator(AbstractObservationSimulator):
 
     def simulate(self) -> (np.array, np.array):
         x = np.random.multivariate_normal(self.mu.flatten(), self.cov, size=self.n_observations)
-        return x.mean(axis=0).flatten(), LedoitWolf().fit(x).covariance_
+        return x.mean(axis=0).reshape(-1, 1), LedoitWolf().fit(x).covariance_
 
 
 class MuCovObservationSimulator(AbstractObservationSimulator):
@@ -37,4 +37,4 @@ class MuCovObservationSimulator(AbstractObservationSimulator):
 
     def simulate(self) -> (np.array, np.array):
         x = np.random.multivariate_normal(self.mu.flatten(), self.cov, size=self.n_observations)
-        return x.mean(axis=0).flatten(), np.cov(x, rowvar=False)
+        return x.mean(axis=0).reshape(-1, 1), np.cov(x, rowvar=False)
