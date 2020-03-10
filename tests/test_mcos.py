@@ -38,8 +38,8 @@ cov = sample_cov(prices_df).values
         MuCovObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.69489515, 0.54737912, -0.10183381]),
-        np.array([0.14173187, 0.47500561, 0.26447212])
+        np.array([0.69489515, 0.54737912, -0.1598759]),
+        np.array([0.14173187, 0.47500561, 0.32839209])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
@@ -66,8 +66,8 @@ cov = sample_cov(prices_df).values
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.04442412, 0.06373909, -0.02304924]),
-        np.array([0.01887905, 0.0202428, 0.00778717])
+        np.array([0.0444241, 0.0637391, -0.0214148]),
+        np.array([0.0188791, 0.0202428, 0.0081114])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
