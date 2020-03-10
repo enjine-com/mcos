@@ -317,15 +317,15 @@ class RiskParityOptimizer(AbstractOptimizer):
     # risk budgeting optimization
     def _calculate_portfolio_var(self, w, cov):
         # function that calculates portfolio risk
-        w = np.asmatrix(w)
-        return (w * cov * w.T)[0, 0]
+        w = np.array(w, ndmin=2)
+        return (w @ cov @ w.T)[0, 0]
 
     def _calculate_risk_contribution(self, w, cov):
         # function that calculates asset contribution to total risk
-        w = np.asmatrix(w)
+        w = np.array(w, ndmin=2)
         sigma = np.sqrt(self._calculate_portfolio_var(w, cov))
         # Marginal Risk Contribution
-        MRC = cov * w.T
+        MRC = cov @ w.T
         # Risk Contribution
         RC = np.multiply(MRC, w.T) / sigma
         return RC
@@ -335,9 +335,9 @@ class RiskParityOptimizer(AbstractOptimizer):
         cov = pars[0]  # covariance table
         x_t = pars[1]  # risk target in percent of portfolio risk
         sig_p = np.sqrt(self._calculate_portfolio_var(x, cov))  # portfolio sigma
-        risk_target = np.asmatrix(np.multiply(sig_p, x_t))
+        risk_target = np.array(np.multiply(sig_p, x_t), ndmin=2)
         asset_RC = self._calculate_risk_contribution(x, cov)
-        J = sum(np.square(asset_RC - risk_target.T))[0, 0]  # sum of squared error
+        J = sum(np.square(asset_RC - risk_target.T))[0]  # sum of squared error
         return J
 
     def _total_weight_constraint(self, x):
@@ -355,6 +355,6 @@ class RiskParityOptimizer(AbstractOptimizer):
 
         res = minimize(self._risk_budget_objective, w0, args=[cov, x_t], method='SLSQP', constraints=cons,
                        options={'disp': True})
-        w_rb = np.asmatrix(res.x)
+        w_rb = np.array(res.x, ndmin=2)
 
         return w_rb
