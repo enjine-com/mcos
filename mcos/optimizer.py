@@ -317,12 +317,12 @@ class RiskParityOptimizer(AbstractOptimizer):
     # risk budgeting optimization
     def _calculate_portfolio_var(self, w, cov):
         # function that calculates portfolio risk
-        w = np.matrix(w)
+        w = np.asmatrix(w)
         return (w * cov * w.T)[0, 0]
 
     def _calculate_risk_contribution(self, w, cov):
         # function that calculates asset contribution to total risk
-        w = np.matrix(w)
+        w = np.asmatrix(w)
         sigma = np.sqrt(self._calculate_portfolio_var(w, cov))
         # Marginal Risk Contribution
         MRC = cov * w.T
