@@ -340,10 +340,10 @@ class RiskParityOptimizer(AbstractOptimizer):
         J = sum(np.square(asset_RC - risk_target.T))[0, 0]  # sum of squared error
         return J
 
-    def _total_weight_constraint(x):
+    def _total_weight_constraint(self, x):
         return np.sum(x) - 1.0
 
-    def _long_only_constraint(x):
+    def _long_only_constraint(self, x):
         return x
 
     def _rp_weights(self, cov, x_t):
@@ -353,7 +353,6 @@ class RiskParityOptimizer(AbstractOptimizer):
 
         # w0 = [1/4]*4
 
-        # What is w0? Is it the optional target risk allocation?
         res = minimize(self._risk_budget_objective, w0, args=[cov, x_t], method='SLSQP', constraints=cons,
                        options={'disp': True})
         w_rb = np.asmatrix(res.x)
