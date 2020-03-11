@@ -291,8 +291,8 @@ class RiskParityOptimizer(AbstractOptimizer):
      Risk Parity Optimizer
     """
 
-    def __init__(self, x_t: np.array = None):
-        self.x_t = x_t
+    def __init__(self, target_risk: np.array = None):
+        self.target_risk = target_risk
 
     def allocate(self, mu: np.array, cov: np.array) -> np.array:
         """
@@ -302,12 +302,12 @@ class RiskParityOptimizer(AbstractOptimizer):
        :return: List of position weights.
        """
 
-        if self.x_t is None:
-            x_t = [1 / len(cov[0])] * len(cov[0])
+        if self.target_risk is None:
+            target_risk = [1 / len(cov[0])] * len(cov[0])
         else:
-            x_t = self.x_t
+            target_risk = self.target_risk
 
-        ret = self._rp_weights(cov, x_t)
+        ret = self._rp_weights(cov, target_risk)
         return ret
 
     @property
@@ -315,12 +315,12 @@ class RiskParityOptimizer(AbstractOptimizer):
         return 'Risk Parity'
 
     # risk budgeting optimization
-    def _calculate_portfolio_var(self, w, cov):
+    def _calculate_portfolio_var(self, w: np.array, cov: np.array) -> float:
         # function that calculates portfolio risk
         w = np.array(w, ndmin=2)
         return (w @ cov @ w.T)[0, 0]
 
-    def _calculate_risk_contribution(self, w, cov):
+    def _calculate_risk_contribution(self, w: np.array, cov: np.array) -> np.ndarray:
         # function that calculates asset contribution to total risk
         w = np.array(w, ndmin=2)
         sigma = np.sqrt(self._calculate_portfolio_var(w, cov))
@@ -330,12 +330,11 @@ class RiskParityOptimizer(AbstractOptimizer):
         RC = np.multiply(MRC, w.T) / sigma
         return RC
 
-    def _risk_budget_objective(self, x, pars):
+    def _risk_budget_objective(self, x: np.ndarray, pars: List) -> float:
         # calculate portfolio risk
-        cov = pars[0]  # covariance table
-        x_t = pars[1]  # risk target in percent of portfolio risk
+        cov, target_risk = pars # covariance table and risk target in percent of portfolio risk
         sig_p = np.sqrt(self._calculate_portfolio_var(x, cov))  # portfolio sigma
-        risk_target = np.array(np.multiply(sig_p, x_t), ndmin=2)
+        risk_target = np.array(np.multiply(sig_p, target_risk), ndmin=2)
         asset_RC = self._calculate_risk_contribution(x, cov)
         J = sum(np.square(asset_RC - risk_target.T))[0]  # sum of squared error
         return J
@@ -346,14 +345,12 @@ class RiskParityOptimizer(AbstractOptimizer):
     def _long_only_constraint(self, x):
         return x
 
-    def _rp_weights(self, cov, x_t):
-        w0 = x_t
+    def _rp_weights(self, cov: np.array, target_risk: List):
+        w0 = target_risk
         cons = ({'type': 'eq', 'fun': self._total_weight_constraint},
                 {'type': 'ineq', 'fun': self._long_only_constraint})
 
-        # w0 = [1/4]*4
-
-        res = minimize(self._risk_budget_objective, w0, args=[cov, x_t], method='SLSQP', constraints=cons,
+        res = minimize(self._risk_budget_objective, w0, args=[cov, target_risk], method='SLSQP', constraints=cons,
                        options={'disp': True})
         w_rb = np.array(res.x, ndmin=2)
 

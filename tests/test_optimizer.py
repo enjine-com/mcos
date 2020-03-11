@@ -76,17 +76,17 @@ class TestRiskParityOptimizer:
                     [0.3, 0.135, -0.32, 0.52]])
 
     def test_allocate(self):
-        weights = RiskParityOptimizer().allocate(self.mu, self.cov)
+        weights = RiskParityOptimizer().allocate(self.mu, self.cov).flatten()
 
         assert_almost_equal(weights, np.array(
-            [[0.19543974, 0.21521557, 0.16260951, 0.42673519]]))
+            [0.19543974, 0.21521557, 0.16260951, 0.42673519]))
 
     def test_allocate_custom_risk_budget(self):
-        x_t = np.array([0.30, 0.30, 0.10, 0.30])  # your risk budget percent of total portfolio risk (equal risk)
+        target_risk = np.array([0.30, 0.30, 0.10, 0.30])  # your risk budget percent of total portfolio risk (equal risk)
 
-        weights = RiskParityOptimizer(x_t).allocate(self.mu, self.cov)
+        weights = RiskParityOptimizer(target_risk).allocate(self.mu, self.cov).flatten()
         assert_almost_equal(weights, np.array(
-            [[0.22837243, 0.25116466, 0.08875776, 0.43170515]]), decimal=3)
+            [0.22837243, 0.25116466, 0.08875776, 0.43170515]), decimal=3)
 
     def test_name(self):
         assert RiskParityOptimizer().name == 'Risk Parity'
