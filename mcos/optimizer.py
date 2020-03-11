@@ -102,7 +102,9 @@ class NCOOptimizer(AbstractOptimizer):
         cov = pd.DataFrame(cov)
 
         if mu is not None:
-            mu = pd.Series(mu)
+            mu = pd.Series(mu.flatten())
+            assert mu.size == cov.shape[0], 'mu and cov dimension must be the same size'
+
         # get correlation matrix
         corr = cov_to_corr(cov)
 
@@ -173,7 +175,11 @@ class NCOOptimizer(AbstractOptimizer):
         :param mu: vector of expected returns
         :return: optimal portfolio allocation
         """
-        inv = np.linalg.inv(cov)
+        try:
+            inv = np.linalg.inv(cov)
+        except np.linalg.LinAlgError:  # get the pseudo-inverse if the matrix is singular
+            inv = np.linalg.pinv(cov)
+
         ones = np.ones(shape=(inv.shape[0], 1))
 
         if mu is None:
@@ -209,7 +215,7 @@ class HRPOptimizer(AbstractOptimizer):
         if ret.sum() > 1.001 or ret.sum() < 0.999:
             raise ValueError("Portfolio allocations don't sum to 1.")
 
-        return ret.tolist()
+        return ret
 
     @property
     def name(self) -> str:

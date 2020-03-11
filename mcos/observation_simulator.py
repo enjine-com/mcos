@@ -2,6 +2,7 @@ import numpy as np
 from abc import abstractmethod, ABC
 from sklearn.covariance import LedoitWolf
 
+
 class AbstractObservationSimulator(ABC):
 
     @abstractmethod
