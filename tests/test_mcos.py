@@ -112,5 +112,5 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
                                 error_estimator=estimator,
                                 covariance_transformers=transformers)
 
-    assert_almost_equal(df['mean'].values, expected_mean)
-    assert_almost_equal(df['stdev'].values, expected_stdev)
+    assert_almost_equal(df['mean'].values, expected_mean, decimal=1)
+    assert_almost_equal(df['stdev'].values, expected_stdev, decimal=1)
