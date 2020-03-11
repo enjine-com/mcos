@@ -103,6 +103,8 @@ class NCOOptimizer(AbstractOptimizer):
 
         if mu is not None:
             mu = pd.Series(mu.flatten())
+            assert mu.size == cov.shape[0], 'mu and cov dimension must be the same size'
+
         # get correlation matrix
         corr = cov_to_corr(cov)
 
@@ -173,7 +175,11 @@ class NCOOptimizer(AbstractOptimizer):
         :param mu: vector of expected returns
         :return: optimal portfolio allocation
         """
-        inv = np.linalg.pinv(cov)
+        try:
+            inv = np.linalg.inv(cov)
+        except np.linalg.LinAlgError:  # get the pseudo-inverse if the matrix is singular
+            inv = np.linalg.pinv(cov)
+
         ones = np.ones(shape=(inv.shape[0], 1))
 
         if mu is None:

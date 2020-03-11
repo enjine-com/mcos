@@ -12,8 +12,6 @@ from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWol
 from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer
 
 
-np.random.seed(0)  # use a random seed for predictable numbers
-
 prices_df = pd.read_csv('tests/stock_prices.csv', parse_dates=True, index_col='date')
 mu = mean_historical_return(prices_df).values
 cov = sample_cov(prices_df).values
@@ -31,81 +29,83 @@ cov = sample_cov(prices_df).values
         MuCovObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [],
-        np.array([0.08776566, 0.05161399, -0.03332758]),
-        np.array([0.0357396, 0.10285164, 0.02141213])
+        np.array([0.0504303, -0.0761952, -0.0320054]),
+        np.array([0.0542213, 0.2585068, 0.0196157])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.69489515, 0.54737912, -0.1598759]),
-        np.array([0.14173187, 0.47500561, 0.32839209])
+        np.array([0.4408877, 0.3203, -0.2687601]),
+        np.array([0.156086, 0.165637, 0.1385316])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [],
-        np.array([0.33034865, 0.30012442, 0.01991391]),
-        np.array([0.25863781, 0.19326429, 0.43201426])
+        np.array([0.2390896, -0.1074101, -0.2404617]),
+        np.array([0.2683496, 0.171923, 0.1683722])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.01599112, 0.029859, 0.01122259]),
-        np.array([0.00042718, 0.01132642, 0.00416026])
+        np.array([0.0344777, 0.0384286, 0.0100253]),
+        np.array([0.01721, 0.0161673, 0.0033896])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [],
-        np.array([0.03622878, 0.20588246, 0.01203012]),
-        np.array([0.01082472, 0.09488349, 0.00180139])
+        np.array([0.0541653, 3.2502716, 0.0201481]),
+        np.array([0.0086772, 2.040143, 0.0042452])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.0444241, 0.0637391, -0.0214148]),
-        np.array([0.0188791, 0.0202428, 0.0081114])
+        np.array([0.0518401, 0.0723096, -0.0231457]),
+        np.array([0.0097951, 0.0099713, 0.0083273])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [],
-        np.array([0.03792157, 0.03298662, -0.04898991]),
-        np.array([0.04289238, 0.04494566, 0.00527806])
+        np.array([0.0501037,  0.0588548, -0.0375485]),
+        np.array([0.0226203, 0.0234838, 0.0051115])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.66794992,  0.71132483, -0.579754]),
-        np.array([0.067115, 0.04504799, 0.0442776])
+        np.array([0.5263593, 0.5868035, -0.4764438]),
+        np.array([0.1273877, 0.0830139, 0.076446])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [],
-        np.array([0.2498265, 0.08673413, -0.52148866]),
-        np.array([0.05304052, 0.21159622, 0.06312135])
+        np.array([0.3768555,  0.3574208, -0.4637792]),
+        np.array([0.1779364, 0.1389299, 0.0346609])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.00868587, 0.01344688, 0.00258779]),
-        np.array([0.00133915, 0.00188729, 0.0004534])
+        np.array([0.0100163, 0.0152269, 0.0023996]),
+        np.array([0.0011785, 0.0011361, 0.0011716])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [],
-        np.array([0.013888, 0.0548296, 0.0046528]),
-        np.array([0.0008, 0.0511335, 0.0017761])
+        np.array([0.018974, 0.0269581, 0.0065477]),
+        np.array([0.0031962, 0.0026226, 0.0009597])
     )
 ])
 def test_simulate_observations(simulator, estimator, transformers, expected_mean, expected_stdev):
+    np.random.seed(0)  # use a random seed for predictable numbers
+
     df = simulate_optimizations(simulator,
                                 n_sims=3,
                                 optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer()],
