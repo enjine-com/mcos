@@ -21,7 +21,7 @@ Install and update using pip:
 
 Before using the MCOS library, it is assumed that you have calculated both the covariance and the expected return vectors of your portfolio for all of the optimizers that you wish to compare. 
 
-The main entry point for the library is the mcos.py file. The entry point is mcos.simulate_observations(). This function completes the MCOS procedure for all of the specified optimizers, and returns to you a DataFrame with the results. 
+The main entry point for the library is the mcos.py file. The entry point is `mcos.simulate_observations()`. This function completes the MCOS procedure for all of the specified optimizers, and returns to you a DataFrame with the results. 
 
 
 ##DATA INPUTS
