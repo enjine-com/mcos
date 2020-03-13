@@ -40,28 +40,28 @@ Along with selecting your choice of  Observation Simulator, you can also specify
 
 1. [Markowitz Optimization](https://www.math.ust.hk/~maykwok/courses/ma362/07F/markowitz_JF.pdf) – Modern Portfolio Theory: the original gangster of portfolio optimizations created in 1952.
 
-> MarkowitzOptimizer()
+   > MarkowitzOptimizer()
 
 2. [Nested Cluster Optimization](https://poseidon01.ssrn.com/delivery.php?ID=560120086072067000023119067087001005063062020029025039112121114081030090076000064068060031127103104029043093066122064093066123051020006028053100121067093122114073005020005127087082126007008124024106088066094097086072096024113073076127127015020000085&EXT=pdf) – Optimization developed by Marcos Lopez de Prado and laid out in his 2019 paper “A Robust Estimator of the Efficient Frontier”. There are two optional variables that you can pass to this specific optimizer. They are the maximum number of clusters to use during clustering, and the number of times to perform the clustering.  
 
-> NCOOptimizer(max_num_clusters, num_clustering_trials)
+   > NCOOptimizer(max_num_clusters, num_clustering_trials)
 
 3. [Risk Parity](https://www.investopedia.com/terms/r/risk-parity.asp) – Risk Parity builds on the work of Markowitz to create portfolios that focus on diversifying risk instead of diversifying capital. If you do not want equal risk distribution you are able to initialize the Risk Parirty Optimizer with an array of weights of your choosing.
 
->RiskParityOptimizer(weights_array)
+   >RiskParityOptimizer(weights_array)
 
 4. [Hierarchical Risk Parity](http://620116007095114078106074071067113067035074090016037034077026115100120002078005085068098110016004116055039007017120016108004066098025029084039103017090030002008062017046068083006008123089028103069080108004112123027095076096004125124115092064072087/) – Another triumph for Dr. Lopez de Prado, as he details an optimization method that does not require inverting a covariance matrix. 
 
-> HRPOptimizer()
+   > HRPOptimizer()
 
 Almost as important as your choice in optimizer is your choice in error estimator. In order to compare something you need the criteria by which to judge. In the quant world we can't just say “this thing is better than that thing”, we need to say “this this thing is better than that thing based on this measure”. The MCOS library is no different. When you call the simulate_observations() function you will have to pass it an instance of the AbstractErrorEstimator class. The current available selections for the Error Estimators are:
 
 1. Expected Outcome: Calculates the mean difference with respect to expected outcomes of the portfolios
-> ExpectedOutcomeErrorEstimator()
+  > ExpectedOutcomeErrorEstimator()
 2. Variance: Calculate the mean difference in variance of the portfolios
-> VarianceErrorEstimator()
+  > VarianceErrorEstimator()
 3. Sharpe Ratio: DONT USE THIS IT CAUSES THE WHOLE THING TO EXPLODE! Just kidding. As you can guess, this calculates the mean difference with respect to the Sharpe ratio of the portfolios
-> SharpeRatioErrorEstimator()
+  > SharpeRatioErrorEstimator()
 
 You may also pass in an instance of a CovarianceTransformer. Currently the only transformer available is  the DeNoiserCovarianceTransformer, which is described in deatail in this paper. Essentially, the denoising of the covariance matrix allows us tackle the instability that noise can bring into the calculations, greatly improving our simulation. 
 
