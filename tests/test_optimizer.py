@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import sample_cov
-from mcos.optimizer import MarkowitzOptimizer, NCOOptimizer, HRPOptimizer
+from mcos.optimizer import MarkowitzOptimizer, NCOOptimizer, HRPOptimizer, RiskParityOptimizer
 from numpy.testing import assert_almost_equal
 
 
@@ -58,10 +58,35 @@ class TestHRPOptimizer:
 
         weights = HRPOptimizer().allocate(mu, cov)
         assert_almost_equal(weights, np.array(
-                [0.02182165, 0.01831474, 0.01928443, 0.08689840, 0.04869276, 0.07706293,
-                 0.02267915, 0.10417196, 0.10925653, 0.02917370, 0.07311320, 0.04267337,
-                 0.06600238, 0.04105381, 0.02740903, 0.03910023, 0.02767476, 0.01861446,
-                 0.05383763, 0.07316479]))
+            [0.02182165, 0.01831474, 0.01928443, 0.08689840, 0.04869276, 0.07706293,
+             0.02267915, 0.10417196, 0.10925653, 0.02917370, 0.07311320, 0.04267337,
+             0.06600238, 0.04105381, 0.02740903, 0.03910023, 0.02767476, 0.01861446,
+             0.05383763, 0.07316479]))
 
     def test_name(self):
         assert HRPOptimizer().name == 'HRP'
+
+
+class TestRiskParityOptimizer:
+    mu = np.array([0.14, 0.12, 0.15, 0.07])
+
+    cov = np.array([[1.23, 0.375, 0.7, 0.3],
+                    [0.375, 1.22, 0.72, 0.135],
+                    [0.7, 0.72, 3.21, -0.32],
+                    [0.3, 0.135, -0.32, 0.52]])
+
+    def test_allocate(self):
+        weights = RiskParityOptimizer().allocate(self.mu, self.cov).flatten()
+
+        assert_almost_equal(weights, np.array(
+            [0.19543974, 0.21521557, 0.16260951, 0.42673519]))
+
+    def test_allocate_custom_risk_budget(self):
+        target_risk = np.array([0.30, 0.30, 0.10, 0.30])  # your risk budget percent of total portfolio risk (equal risk)
+
+        weights = RiskParityOptimizer(target_risk).allocate(self.mu, self.cov).flatten()
+        assert_almost_equal(weights, np.array(
+            [0.22837243, 0.25116466, 0.08875776, 0.43170515]), decimal=3)
+
+    def test_name(self):
+        assert RiskParityOptimizer().name == 'Risk Parity'

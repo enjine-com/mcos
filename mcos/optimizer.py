@@ -1,3 +1,4 @@
+from __future__ import division
 from typing import Dict, List
 
 import numpy as np
@@ -7,7 +8,10 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
 import scipy.cluster.hierarchy as sch
+from scipy.optimize import minimize
+from matplotlib import pyplot as plt
 from mcos.covariance_transformer import cov_to_corr
+from numpy.linalg import inv, pinv
 
 
 class AbstractOptimizer(ABC):
@@ -234,7 +238,7 @@ class HRPOptimizer(AbstractOptimizer):
             return [combined_node]
 
         return self._cluster_sub_sequence(clustering_data, row.iloc[0]['node1']) + \
-            self._cluster_sub_sequence(clustering_data, row.iloc[0]['node2'])
+               self._cluster_sub_sequence(clustering_data, row.iloc[0]['node2'])
 
     def _quasi_diagonal_cluster_sequence(self, link: np.ndarray) -> List:
         # Sort clustered items by distance
@@ -280,3 +284,74 @@ class HRPOptimizer(AbstractOptimizer):
         for i in range(dist.shape[0]):
             dist[i, i] = 0.  # diagonals should always be 0, but sometimes it's only close to 0
         return dist
+
+
+class RiskParityOptimizer(AbstractOptimizer):
+    """
+     Risk Parity Optimizer
+    """
+
+    def __init__(self, target_risk: np.array = None):
+        self.target_risk = target_risk
+
+    def allocate(self, mu: np.array, cov: np.array) -> np.array:
+        """
+       Gets position weights according to the risk parity method
+       :param cov: covariance matrix
+       :param mu: vector of expected returns
+       :return: List of position weights.
+       """
+
+        if self.target_risk is None:
+            target_risk = [1 / len(cov[0])] * len(cov[0])
+        else:
+            target_risk = self.target_risk
+
+        ret = self._rp_weights(cov, target_risk)
+        return ret
+
+    @property
+    def name(self) -> str:
+        return 'Risk Parity'
+
+    # risk budgeting optimization
+    def _calculate_portfolio_var(self, w: np.array, cov: np.array) -> float:
+        # function that calculates portfolio risk
+        w = np.array(w, ndmin=2)
+        return (w @ cov @ w.T)[0, 0]
+
+    def _calculate_risk_contribution(self, w: np.array, cov: np.array) -> np.ndarray:
+        # function that calculates asset contribution to total risk
+        w = np.array(w, ndmin=2)
+        sigma = np.sqrt(self._calculate_portfolio_var(w, cov))
+        # Marginal Risk Contribution
+        MRC = cov @ w.T
+        # Risk Contribution
+        RC = np.multiply(MRC, w.T) / sigma
+        return RC
+
+    def _risk_budget_objective(self, x: np.ndarray, pars: List) -> float:
+        # calculate portfolio risk
+        cov, target_risk = pars # covariance table and risk target in percent of portfolio risk
+        sig_p = np.sqrt(self._calculate_portfolio_var(x, cov))  # portfolio sigma
+        risk_target = np.array(np.multiply(sig_p, target_risk), ndmin=2)
+        asset_RC = self._calculate_risk_contribution(x, cov)
+        J = sum(np.square(asset_RC - risk_target.T))[0]  # sum of squared error
+        return J
+
+    def _total_weight_constraint(self, x):
+        return np.sum(x) - 1.0
+
+    def _long_only_constraint(self, x):
+        return x
+
+    def _rp_weights(self, cov: np.array, target_risk: List):
+        w0 = target_risk
+        cons = ({'type': 'eq', 'fun': self._total_weight_constraint},
+                {'type': 'ineq', 'fun': self._long_only_constraint})
+
+        res = minimize(self._risk_budget_objective, w0, args=[cov, target_risk], method='SLSQP', constraints=cons,
+                       options={'disp': True})
+        w_rb = np.array(res.x, ndmin=2)
+
+        return w_rb

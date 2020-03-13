@@ -9,7 +9,7 @@ from mcos.covariance_transformer import DeNoiserCovarianceTransformer
 from mcos.error_estimator import ExpectedOutcomeErrorEstimator, SharpeRatioErrorEstimator, VarianceErrorEstimator
 from mcos.mcos import simulate_optimizations
 from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWolfObservationSimulator
-from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer
+from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer, RiskParityOptimizer
 
 
 prices_df = pd.read_csv('tests/stock_prices.csv', parse_dates=True, index_col='date')
@@ -108,7 +108,7 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
 
     df = simulate_optimizations(simulator,
                                 n_sims=3,
-                                optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer()],
+                                optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer(), RiskParityOptimizer()],
                                 error_estimator=estimator,
                                 covariance_transformers=transformers)
 
