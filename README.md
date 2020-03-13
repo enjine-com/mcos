@@ -57,11 +57,11 @@ Along with selecting your choice of  Observation Simulator, you can also specify
 Almost as important as your choice in optimizer is your choice in error estimator. In order to compare something you need the criteria by which to judge. In the quant world we can't just say “this thing is better than that thing”, we need to say “this this thing is better than that thing based on this measure”. The MCOS library is no different. When you call the simulate_observations() function you will have to pass it an instance of the AbstractErrorEstimator class. The current available selections for the Error Estimators are:
 
 1. Expected Outcome: Calculates the mean difference with respect to expected outcomes of the portfolios
-  > ExpectedOutcomeErrorEstimator()
+    > ExpectedOutcomeErrorEstimator()
 2. Variance: Calculate the mean difference in variance of the portfolios
-  > VarianceErrorEstimator()
+    > VarianceErrorEstimator()
 3. Sharpe Ratio: DONT USE THIS IT CAUSES THE WHOLE THING TO EXPLODE! Just kidding. As you can guess, this calculates the mean difference with respect to the Sharpe ratio of the portfolios
-  > SharpeRatioErrorEstimator()
+    > SharpeRatioErrorEstimator()
 
 You may also pass in an instance of a CovarianceTransformer. Currently the only transformer available is  the DeNoiserCovarianceTransformer, which is described in deatail in this paper. Essentially, the denoising of the covariance matrix allows us tackle the instability that noise can bring into the calculations, greatly improving our simulation. 
 
