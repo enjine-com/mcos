@@ -26,7 +26,7 @@ The main entry point for the library is the mcos.py file. The entry point is mco
 
 ##DATA INPUTS
 
-As mentioned above, the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator (currently supported are standard and Ledoit-Wolf, which is detailed in this unfortunately titled paper) and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a nxn matrix. 
+As mentioned above, the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator (currently supported are standard and Ledoit-Wolf, which is detailed in this unfortunately titled paper) and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. 
 
 ##CONFIGURATION INPUTS
 
@@ -37,13 +37,13 @@ Along with selecting your choice of  Observation Simulator, you can also specify
 3. [Risk Parity](https://www.investopedia.com/terms/r/risk-parity.asp) – Risk Parity builds on the work of Markowitz to create portfolios that focus on diversifying risk instead of diversifying capital
 4. [Hierarchical Risk Parity](http://620116007095114078106074071067113067035074090016037034077026115100120002078005085068098110016004116055039007017120016108004066098025029084039103017090030002008062017046068083006008123089028103069080108004112123027095076096004125124115092064072087/) – Another triumph for Dr. Lopez de Prado, as he details an optimization method that does not require inverting a covariance matrix. 
 
-Almost as important as your choice in optimizer is your choice in error estimator. In order to compare something you need the criteria by which to judge. In the quant world we can't just say “this thing is better than that thing”, we need to say “this this thing is better than that thing based on this measure”. The MCOS library is no different. When you call the simulate_observations() function you weill have to pass it an instance of the AbstractErrorEstimator class. The current available selections for the Error Estimators are:
+Almost as important as your choice in optimizer is your choice in error estimator. In order to compare something you need the criteria by which to judge. In the quant world we can't just say “this thing is better than that thing”, we need to say “this this thing is better than that thing based on this measure”. The MCOS library is no different. When you call the simulate_observations() function you will have to pass it an instance of the AbstractErrorEstimator class. The current available selections for the Error Estimators are:
 
 1. Expected Outcome: Calculates the mean difference with respect to expected outcomes of the portfolios
 2. Variance: Calculate the mean difference in variance of the portfolios
 3. Sharpe Ratio: DONT USE THIS IT CAUSES THE WHOLE THING TO EXPLODE! Just kidding. As you can guess, this calculates the mean difference with respect to the Sharpe ratio of the portfolios
 
-You must also pass in an instance of a CovarianceTransformer. Currently the only transformer available is  the DeNoiserCovarianceTransformer, which is described in deatail in this paper. Essentially, the denoising of the covariance matrix allows us tackle the instability that noise can bring into the calculations, greatly improving our simulation. 
+You may also pass in an instance of a CovarianceTransformer. Currently the only transformer available is  the DeNoiserCovarianceTransformer, which is described in deatail in this paper. Essentially, the denoising of the covariance matrix allows us tackle the instability that noise can bring into the calculations, greatly improving our simulation. 
 
 ##RETURN VALUES
 
