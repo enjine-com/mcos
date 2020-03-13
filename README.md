@@ -1,29 +1,29 @@
-#Monte Carlo Optimization Simulation
+# Monte Carlo Optimization Simulation
 
 This library is the fulfillment of all your hopes and dreams, assuming your hopes and dreams consist entirely of an implementation of the Monte Carlo Optimization selection from Dr. Marcos Lopez de Prado's 2019 paper ['A Robust Estimator of the Efficient Frontier'](https://poseidon01.ssrn.com/delivery.php?ID=560120086072067000023119067087001005063062020029025039112121114081030090076000064068060031127103104029043093066122064093066123051020006028053100121067093122114073005020005127087082126007008124024106088066094097086072096024113073076127127015020000085&EXT=pdf). Those are some weirdly specific hopes and dreams. But you're our kind of people. MCOS allows you to compare the allocation error of different portfolio optimization methods, given a particular set of inputs. 
 
 
-##WHY MCOS?
+## WHY MCOS?
 
 Optimizing a portfolio is like petting a cat: the same approach doesn't work for every situation. Cats and markets are both complex creatures and you need to be cautious before you dive in. It is naive to think that one method is best for everything until the end of time. MCOS allows you to quickly compare different optimization methods to find which is most robust in your particular case.
 
-##HOW?
+## HOW?
 
 After you have calculated the covariance matrix and the expected returns for your portfolio you feed them into the simulator. Using the optimization methods you've selected, the library then calculates the optimal weights. Then a Monte Carlo simulation is performed, where optimal allocations are computed on a large number of simulated covariances and returns. It then compares these allocations to the ideal and calculates the error. 
 
 
-##GETTING STARTED
+## GETTING STARTED
 
 Install and update using pip:
 > pip install mcos
 
-##RUNNING SIMULATIONS
+## RUNNING SIMULATIONS
 
 Before using the MCOS library, it is assumed that you have calculated both the covariance and the expected return vectors of your portfolio for all of the optimizers that you wish to compare. 
 
 The main entry point for the library is the mcos.py file. The entry point is mcos.simulate_observations(). This function completes the MCOS procedure for all of the specified optimizers, and returns to you a DataFrame with the results. It takes an observation simulator, the number of simulations you'd like to run, a list of all the optimizers you would like to compare, the type of metric you'd like to test, and an optional covariance transformer. All of these are described below. 
 
-##SAMPLE SIMULATION
+## SAMPLE SIMULATION
 
 > obs_sim = MuCovObservationSimulator(expected_returns, covariance, num_sims)  
 > optimizers = [HRPOptimizer(), MarkowitzOptimizer(),NCOOptimizer(max_num_clusters, num_clustering_trials)]   
@@ -34,13 +34,13 @@ The main entry point for the library is the mcos.py file. The entry point is mco
 > results = mcos.simulate_optimizations(obs_sim, num_sims, optimizers, error_estimator, covariance_transformers)  
 
 
-##DATA INPUTS
+## DATA INPUTS
 
 As mentioned above, the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator (currently supported are standard and Ledoit-Wolf, which is detailed in this unfortunately titled paper) and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. You must also include the number of simulations that you wish to run. 
 
 
 
-##CONFIGURATION INPUTS
+## CONFIGURATION INPUTS
 
 Along with selecting your choice of  Observation Simulator, you can also specify the optimzers that you would like to compare. These are passed in as a list of Optimizer class objects. The Optimizers currently supported are: 
 
@@ -71,10 +71,10 @@ Almost as important as your choice in optimizer is your choice in error estimato
 
 You may also pass in an instance of a CovarianceTransformer. Currently the only transformer available is  the DeNoiserCovarianceTransformer, which is described in deatail in this paper. Essentially, the denoising of the covariance matrix allows us tackle the instability that noise can bring into the calculations, greatly improving our simulation. 
 
-##RETURN VALUES
+## RETURN VALUES
 
 The library will return to you a pandas DataFrame with the name of the optimizer, the mean of whichever error estimator you chose, and the standard deviation of the estimator. 
 
-##AUTHORS
+## AUTHORS
 
 The library was constructed by the team at [Enjine](http://www.enjine.com).
