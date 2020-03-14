@@ -36,8 +36,11 @@ The main entry point for the library is the mcos.py file. The entry point is mco
 
 ## DATA INPUTS
 
-As mentioned above, the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator (currently supported are standard and Ledoit-Wolf, which is detailed in this unfortunately titled paper) and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. You must also include the number of simulations that you wish to run. 
+As mentioned above, the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. You must also include the number of simulations that you wish to run. The observation simulators that are currently supported are:
 
+1. Standard - The chicken fingers of simulators. Plain, unexciting, but darn it, it gets the job done. Regular estimation of the covariance matrix. 
+
+2. Ledoit-Wolf - If you prefer your covariance matrix shrunken, this is the one for you. Read all about it in this [unfortunately titled paper](http://www.ledoit.net/honey.pdf)
 
 
 ## CONFIGURATION INPUTS
@@ -69,7 +72,9 @@ Almost as important as your choice in optimizer is your choice in error estimato
 3. Sharpe Ratio: DONT USE THIS IT CAUSES THE WHOLE THING TO EXPLODE! Just kidding. As you can guess, this calculates the mean difference with respect to the Sharpe ratio of the portfolios
     > SharpeRatioErrorEstimator()
 
-You may also pass in an instance of a CovarianceTransformer. Currently the only transformer available is  the DeNoiserCovarianceTransformer, which is described in deatail in this paper. Essentially, the denoising of the covariance matrix allows us tackle the instability that noise can bring into the calculations, greatly improving our simulation. 
+You may also pass in an instance of a CovarianceTransformer if you so choose. This can be useful in helping remove some error from the simulation due to things such as noise. Currently we only have this single transformer available:  
+
+1. Denoiser Transformer - as detailed in [this paper](https://poseidon01.ssrn.com/delivery.php?ID=489024064102117109091077096101101064027075072041043035077073019004118011104120069072123098043034107058119101127077107089081076059012026078015006095118070112111086032085044067091079116085069123114124013083086031102022097077123007004068111066094003118&EXT=pdf) by Dr. Lopez de Prado, this transformer helps shrinks the noise to aid in the simulation. 
 
 ## RETURN VALUES
 
