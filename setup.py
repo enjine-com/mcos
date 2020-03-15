@@ -6,7 +6,7 @@ with open('README.md', 'r') as fh:
 setup(
   name='mcos',
   packages=['mcos'],
-  version='0.0.1',
+  version='0.1.0',
   license='MIT',
   description='Implementation of Monte Carlo Optimization Selection from the paper "A Robust Estimator of the Efficient Frontier"',
   long_description=long_description,

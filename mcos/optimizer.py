@@ -1,17 +1,18 @@
 from __future__ import division
+
+from abc import ABC, abstractmethod
 from typing import Dict, List
 
 import numpy as np
-from abc import ABC, abstractmethod
-from pypfopt.efficient_frontier import EfficientFrontier
 import pandas as pd
+import scipy.cluster.hierarchy as sch
+from numpy.linalg import inv, pinv
+from pypfopt.efficient_frontier import EfficientFrontier
+from scipy.optimize import minimize
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
-import scipy.cluster.hierarchy as sch
-from scipy.optimize import minimize
-from matplotlib import pyplot as plt
+
 from mcos.covariance_transformer import cov_to_corr
-from numpy.linalg import inv, pinv
 
 
 class AbstractOptimizer(ABC):
