@@ -22,29 +22,29 @@ cov = sample_cov(prices_df).values
         MuCovObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.07580845, 0.05966212, -0.02893896]),
-        np.array([0.03445259, 0.03214469, 0.01724587])
+        np.array([0.07580845,  0.05966212, -0.02893896,  0.0085226]),
+        np.array([0.03445259, 0.03214469, 0.01724587, 0.01244282])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [],
-        np.array([0.0504303, -0.0761952, -0.0320054]),
-        np.array([0.0542213, 0.2585068, 0.0196157])
+        np.array([0.05043029, -0.0761952 , -0.03200537, -0.00413669]),
+        np.array([0.05422127, 0.25850676, 0.0196157 , 0.01376204])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.4408877, 0.3203, -0.2687601]),
-        np.array([0.156086, 0.165637, 0.1385316])
+        np.array([0.05183939,  0.07230958, -0.02051239, -0.0086959]),
+        np.array([0.00979491, 0.00997131, 0.00640547, 0.00077058])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [],
-        np.array([0.2390896, -0.1074101, -0.2404617]),
-        np.array([0.2683496, 0.171923, 0.1683722])
+        np.array([0.05010366,  0.05885478, -0.0375485 , -0.00431366]),
+        np.array([0.02262029, 0.02348383, 0.00511152, 0.01081385])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
@@ -111,6 +111,7 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
                                 optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer(), RiskParityOptimizer()],
                                 error_estimator=estimator,
                                 covariance_transformers=transformers)
-
+    import pdb;
+    pdb.set_trace()
     assert_almost_equal(df['mean'].values, expected_mean, decimal=1)
     assert_almost_equal(df['stdev'].values, expected_stdev, decimal=1)
