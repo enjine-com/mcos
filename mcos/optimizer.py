@@ -353,6 +353,6 @@ class RiskParityOptimizer(AbstractOptimizer):
 
         res = minimize(self._risk_budget_objective, w0, args=[cov, target_risk], method='SLSQP', constraints=cons,
                        options={'disp': True})
-        w_rb = np.array(res.x, ndmin=2)
+        w_rb = np.array(res.x)
 
         return w_rb

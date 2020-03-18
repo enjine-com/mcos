@@ -22,85 +22,85 @@ cov = sample_cov(prices_df).values
         MuCovObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.07580845, 0.05966212, -0.02893896]),
-        np.array([0.03445259, 0.03214469, 0.01724587])
+        np.array([0.07580845, 0.05966212, -0.02893896, 0.0085226]),
+        np.array([0.03445259, 0.03214469, 0.01724587, 0.01244282])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [],
-        np.array([0.0504303, -0.0761952, -0.0320054]),
-        np.array([0.0542213, 0.2585068, 0.0196157])
+        np.array([0.05043029, -0.0761952, -0.03200537, -0.00413669]),
+        np.array([0.05422127, 0.25850676, 0.0196157, 0.01376204])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.4408877, 0.3203, -0.2687601]),
-        np.array([0.156086, 0.165637, 0.1385316])
+        np.array([0.44088768, 0.32030003, -0.26876011, 0.15122857]),
+        np.array([0.156086, 0.16563697, 0.13853157, 0.27771979])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [],
-        np.array([0.2390896, -0.1074101, -0.2404617]),
-        np.array([0.2683496, 0.171923, 0.1683722])
+        np.array([0.2390896, -0.10741015, -0.24046168, -0.0070365]),
+        np.array([0.26834958, 0.171923, 0.16837215, 0.14896394])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.0344777, 0.0384286, 0.0100253]),
-        np.array([0.01721, 0.0161673, 0.0033896])
+        np.array([0.03447771, 0.03842862, 0.01002529, 0.00207496]),
+        np.array([0.01720998, 0.0161673, 0.00338963, 0.00068379])
     ),
     (
         MuCovObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [],
-        np.array([0.0541653, 3.2502716, 0.0201481]),
-        np.array([0.0086772, 2.040143, 0.0042452])
+        np.array([0.05416531, 3.25027156, 0.02014813, 0.00666281]),
+        np.array([0.00867717, 2.04014303, 0.00424525, 0.00419053])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.0518401, 0.0723096, -0.0231457]),
-        np.array([0.0097951, 0.0099713, 0.0083273])
+        np.array([0.05183939, 0.07230958, -0.02051239, -0.0086959]),
+        np.array([0.00979491, 0.00997131, 0.00640547, 0.00077058])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         ExpectedOutcomeErrorEstimator(),
         [],
-        np.array([0.0501037,  0.0588548, -0.0375485]),
-        np.array([0.0226203, 0.0234838, 0.0051115])
+        np.array([0.05010366, 0.05885478, -0.0375485, -0.00431366]),
+        np.array([0.02262029, 0.02348383, 0.00511152, 0.01081385])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.5263593, 0.5868035, -0.4764438]),
-        np.array([0.1273877, 0.0830139, 0.076446])
+        np.array([0.52634486, 0.58680348, -0.44668879, -0.34823549]),
+        np.array([0.12738562, 0.08301391, 0.15521816, 0.02176522])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [],
-        np.array([0.3768555,  0.3574208, -0.4637792]),
-        np.array([0.1779364, 0.1389299, 0.0346609])
+        np.array([0.37685555, 0.35742078, -0.46377915, -0.0650202]),
+        np.array([0.17793642, 0.13892987, 0.03466091, 0.2445361])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.0100163, 0.0152269, 0.0023996]),
-        np.array([0.0011785, 0.0011361, 0.0011716])
+        np.array([0.01001657, 0.01522694, 0.00218297, 0.00063938]),
+        np.array([0.00117849, 0.00113607, 0.00020851, 0.00015752])
     ),
     (
         MuCovLedoitWolfObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [],
-        np.array([0.018974, 0.0269581, 0.0065477]),
-        np.array([0.0031962, 0.0026226, 0.0009597])
+        np.array([0.01897399, 0.02695813, 0.00654766, 0.00203981]),
+        np.array([0.00319618, 0.00262264, 0.00095974, 0.00060647])
     )
 ])
 def test_simulate_observations(simulator, estimator, transformers, expected_mean, expected_stdev):
