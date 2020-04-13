@@ -12,8 +12,8 @@ from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWol
     convert_price_history
 from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer, RiskParityOptimizer
 
-# peter change back
-prices_df = pd.read_csv('stock_prices.csv', parse_dates=True, index_col='date')
+
+prices_df = pd.read_csv('tests/stock_prices.csv', parse_dates=True, index_col='date')
 mu = mean_historical_return(prices_df).values
 cov = sample_cov(prices_df).values
 
@@ -109,7 +109,8 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
 
     df = simulate_optimizations(simulator,
                                 n_sims=3,
-                                optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer(), RiskParityOptimizer()],
+                                optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer(),
+                                            RiskParityOptimizer()],
                                 error_estimator=estimator,
                                 covariance_transformers=transformers)
 
@@ -118,7 +119,7 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
 
 
 def test_convert_price_history():
-    df = pd.read_csv('stock_prices.csv', parse_dates=True, index_col='date')
+    df = pd.read_csv('test/stock_prices.csv', parse_dates=True, index_col='date')
     mu, cov = convert_price_history(df)
 
     assert mu["GOOG"], 0.26770283812412754
