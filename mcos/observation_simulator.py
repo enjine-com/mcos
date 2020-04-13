@@ -1,6 +1,9 @@
 import numpy as np
 from abc import abstractmethod, ABC
 from sklearn.covariance import LedoitWolf
+import pandas as pd
+from pypfopt import risk_models
+from pypfopt import expected_returns
 
 
 class AbstractObservationSimulator(ABC):
@@ -38,3 +41,15 @@ class MuCovObservationSimulator(AbstractObservationSimulator):
     def simulate(self) -> (np.array, np.array):
         x = np.random.multivariate_normal(self.mu.flatten(), self.cov, size=self.n_observations)
         return x.mean(axis=0).reshape(-1, 1), np.cov(x, rowvar=False)
+
+
+def convert_price_history(df: pd.DataFrame):
+    """
+    converts a price history dataframe into expected returns and covariance
+     :param df: Dataframe of price histories indexed by data
+     @return
+    """
+    # Calculate expected returns and sample covariance
+    mu = expected_returns.mean_historical_return(df)
+    cov = risk_models.sample_cov(df)
+    return mu, cov
