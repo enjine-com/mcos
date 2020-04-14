@@ -3,7 +3,7 @@ from mcos.utils import convert_price_history
 
 
 def test_convert_price_history():
-    df = pd.read_csv('test/stock_prices.csv', parse_dates=True, index_col='date')
+    df = pd.read_csv('tests/stock_prices.csv', parse_dates=True, index_col='date')
     mu, cov = convert_price_history(df)
 
     assert mu["GOOG"], 0.26770283812412754
