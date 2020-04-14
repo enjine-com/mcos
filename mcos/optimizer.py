@@ -351,8 +351,9 @@ class RiskParityOptimizer(AbstractOptimizer):
         cons = ({'type': 'eq', 'fun': self._total_weight_constraint},
                 {'type': 'ineq', 'fun': self._long_only_constraint})
 
+        # changed disp to false to remove excess risk parity logging
         res = minimize(self._risk_budget_objective, w0, args=[cov, target_risk], method='SLSQP', constraints=cons,
-                       options={'disp': True})
+                       options={'disp': False})
         w_rb = np.array(res.x)
 
         return w_rb

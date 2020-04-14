@@ -7,7 +7,7 @@ from pypfopt.risk_models import sample_cov
 
 from mcos.covariance_transformer import DeNoiserCovarianceTransformer
 from mcos.error_estimator import ExpectedOutcomeErrorEstimator, SharpeRatioErrorEstimator, VarianceErrorEstimator
-from mcos.mcos import simulate_optimizations
+from mcos.mcos import simulate_optimizations, simulate_optimization_from_price_history
 from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWolfObservationSimulator
 from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer, RiskParityOptimizer
 
@@ -115,5 +115,20 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
 
     assert_almost_equal(df['mean'].values, expected_mean, decimal=1)
     assert_almost_equal(df['stdev'].values, expected_stdev, decimal=1)
+
+
+def test_simulate_observations_price_history():
+    np.random.seed(0)
+
+    df = simulate_optimization_from_price_history(prices_df,
+                                                  'MuCovLedoitWolfObservationSimulator',
+                                                  n_sims=3,
+                                                  optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer(),
+                                                              RiskParityOptimizer()],
+                                                  error_estimator=ExpectedOutcomeErrorEstimator(),
+                                                  covariance_transformers=[DeNoiserCovarianceTransformer()])
+
+    assert_almost_equal(df['mean'].values, np.array([0.0467513, 0.0676277, -0.0181564, -0.0078399]))
+    assert_almost_equal(df['stdev'].values, np.array([0.0386170, 0.0372161, 0.0098585, 0.00666344]))
 
 

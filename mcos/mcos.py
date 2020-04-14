@@ -4,8 +4,10 @@ from typing import List
 
 from mcos.covariance_transformer import AbstractCovarianceTransformer
 from mcos.error_estimator import AbstractErrorEstimator
-from mcos.observation_simulator import AbstractObservationSimulator
+from mcos.observation_simulator import AbstractObservationSimulator, MuCovLedoitWolfObservationSimulator, \
+    MuCovObservationSimulator
 from mcos.optimizer import AbstractOptimizer
+from mcos.utils import convert_price_history
 
 
 def simulate_optimizations(
@@ -37,3 +39,23 @@ def simulate_optimizations(
             'stdev': np.std(error_estimates[optimizer.name])
         } for optimizer in optimizers
     ]).set_index('optimizer')
+
+
+def simulate_optimization_from_price_history(
+        price_history: pd.DataFrame,
+        observation_name: str,
+        n_sims: int,
+        optimizers: List[AbstractOptimizer],
+        error_estimator: AbstractErrorEstimator,
+        covariance_transformers: List[AbstractCovarianceTransformer]):
+
+    mu, cov = convert_price_history(price_history)
+
+    if observation_name.lower() == "mucovledoitwolfobservationsimulator":
+        sim = MuCovLedoitWolfObservationSimulator(mu, cov, n_sims)
+    elif observation_name == "mucovobservationsimulator":
+        sim = MuCovObservationSimulator(mu, cov, n_sims)
+    else:
+        raise ValueError("Invalid observation simulator name")
+
+    return simulate_optimizations(sim, n_sims, optimizers, error_estimator, covariance_transformers)
