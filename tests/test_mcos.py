@@ -122,6 +122,7 @@ def test_simulate_observations_price_history():
 
     df = simulate_optimization_from_price_history(prices_df,
                                                   'MuCovLedoitWolfObservationSimulator',
+                                                  n_observations=3,
                                                   n_sims=3,
                                                   optimizers=[MarkowitzOptimizer(), NCOOptimizer(), HRPOptimizer(),
                                                               RiskParityOptimizer()],

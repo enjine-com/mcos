@@ -44,6 +44,7 @@ def simulate_optimizations(
 def simulate_optimization_from_price_history(
         price_history: pd.DataFrame,
         observation_name: str,
+        n_observations:int,
         n_sims: int,
         optimizers: List[AbstractOptimizer],
         error_estimator: AbstractErrorEstimator,
@@ -52,9 +53,9 @@ def simulate_optimization_from_price_history(
     mu, cov = convert_price_history(price_history)
 
     if observation_name.lower() == "mucovledoitwolfobservationsimulator":
-        sim = MuCovLedoitWolfObservationSimulator(mu, cov, n_sims)
+        sim = MuCovLedoitWolfObservationSimulator(mu, cov, n_observations)
     elif observation_name == "mucovobservationsimulator":
-        sim = MuCovObservationSimulator(mu, cov, n_sims)
+        sim = MuCovObservationSimulator(mu, cov, n_observations)
     else:
         raise ValueError("Invalid observation simulator name")
 
