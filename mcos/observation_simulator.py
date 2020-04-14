@@ -38,3 +38,6 @@ class MuCovObservationSimulator(AbstractObservationSimulator):
     def simulate(self) -> (np.array, np.array):
         x = np.random.multivariate_normal(self.mu.flatten(), self.cov, size=self.n_observations)
         return x.mean(axis=0).reshape(-1, 1), np.cov(x, rowvar=False)
+
+
+
