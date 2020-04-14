@@ -21,10 +21,11 @@ Install and update using pip:
 
 Before using the MCOS library, it is assumed that you have calculated both the covariance and the expected return vectors of your portfolio for all of the optimizers that you wish to compare. 
 
-The main entry point for the library is the mcos.py file. The entry point is mcos.simulate_observations(). This function completes the MCOS procedure for all of the specified optimizers, and returns to you a DataFrame with the results. It takes an observation simulator, the number of simulations you'd like to run, a list of all the optimizers you would like to compare, the type of metric you'd like to test, and an optional covariance transformer. All of these are described below. 
+The main entry point for the library is the mcos.py file. The entry points are mcos.simulate_observations() and mcos.simulate_optimization_from_price_history(). mcos.simulate_observations requires that you have already calculated both expected returns and covariance, whereas mcos.simulate_optimization_from_price_history() allows you to pass a price history DataFrame that the system will calculate expected returns and covariance from. These functions complete the MCOS procedure for all of the specified optimizers, and returns to you a DataFrame with the results. It takes an observation simulator, the number of simulations you'd like to run, a list of all the optimizers you would like to compare, the type of metric you'd like to test, and an optional covariance transformer. All of these are described below. 
 
 ## SAMPLE SIMULATION
 
+> #simulate_optimizations
 > obs_sim = MuCovObservationSimulator(expected_returns, covariance, num_sims)  
 > optimizers = [HRPOptimizer(), MarkowitzOptimizer(),NCOOptimizer(max_num_clusters, num_clustering_trials)]   
 > error_estimator = VarianceErrorEstimator()  
@@ -33,14 +34,30 @@ The main entry point for the library is the mcos.py file. The entry point is mco
 >    
 > results = mcos.simulate_optimizations(obs_sim, num_sims, optimizers, error_estimator, covariance_transformers)  
 
+> #simulate_optimizations_from_price_history
+> optimizers = [HRPOptimizer(), MarkowitzOptimizer(),NCOOptimizer(max_num_clusters, num_clustering_trials)]   
+> error_estimator = VarianceErrorEstimator()  
+> covariance_transformers = [DeNoiserCovarianceTransformer()]  
+> num_sims = 50  
+> num_observations = 50
+> simulator_name = "MuCov"
+>    
+> results = mcos.simulate_optimizations_from_price_history(price_history, simulator_name, num_observations, num_sims, optimizers, error_estimator, covariance_transformers)  
+
 
 ## DATA INPUTS
 
-As mentioned above, the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. You must also include the number of simulations that you wish to run. The observation simulators that are currently supported are:
+As mentioned above, when calling mcos.simulate_optimizations() the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. You must also include the number of simulations that you wish to run.
 
-1. Standard - The chicken fingers of simulators. Plain, unexciting, but darn it, it gets the job done. Regular estimation of the covariance matrix. 
 
-2. Ledoit-Wolf - If you prefer your covariance matrix shrunken, this is the one for you. Read all about it in this [unfortunately titled paper](http://www.ledoit.net/honey.pdf)
+If you are calling mcos.simulate_optimizations_from_price_history(), expected return vector and covariance are calculate for you. So instead of passing an Observation Simulator object, you would instead pass the price history, the name of the simulator you'd like to run, and the number of observations you'd like make. 
+
+The observation simulators that are currently supported are:
+
+1. Standard - The chicken fingers of simulators. Plain, unexciting, but darn it, it gets the job done. Regular estimation of the covariance matrix. For simulate_optimizations_from_price_history calls, pass "MuCov" as the simulator name. 
+
+2. Ledoit-Wolf - If you prefer your covariance matrix shrunken, this is the one for you. Read all about it in this [unfortunately titled paper](http://www.ledoit.net/honey.pdf). For simulate_optimizations_from_price_history calls, pass "MuCovLedoitWolf" as the simulator name
+  
 
 
 ## CONFIGURATION INPUTS
