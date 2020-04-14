@@ -40,11 +40,11 @@ The main entry point for the library is the mcos.py file. The entry points are m
 >
 > optimizers = [HRPOptimizer(), MarkowitzOptimizer(),NCOOptimizer(max_num_clusters, num_clustering_trials)]   
 > error_estimator = VarianceErrorEstimator()  
-> covariance_transformers = [DeNoiserCovarianceTransformer()]  
-> simulator_name = "MuCov" 
-> num_sims = 50 
-> num_observations = 50 
-> 
+> covariance_transformers = [DeNoiserCovarianceTransformer()]         
+> simulator_name = "MuCov"  
+> num_sims = 50  
+> num_observations = 50  
+>   
 > results = mcos.simulate_optimizations_from_price_history(price_history, simulator_name, num_observations, num_sims, optimizers, error_estimator, covariance_transformers)  
 
 
