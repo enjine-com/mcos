@@ -59,17 +59,21 @@ class MuCovJackknifeObservationSimulator(AbstractObservationSimulator):
         x_prime = None
         for count in range(x.__len__()):
             x_total = None
+            # add all of the samples except the current
             for y in range(x.__len__()):
                 if count != y:
                     if x_total is None:
                         x_total = x[y]
                     else:
                         x_total = x_total + x[y]
+            # divide by n-1
             x_total = x_total / (x.__len__() - 1)
+
             if x_prime is None:
                 x_prime = x_total
             else:
                 x_prime = x_prime + x_total
+        # take the average of all of the jackknifed results
         x_prime = x_prime / x.__len__()
 
         return x_prime.mean(axis=0).reshape(-1, 1), np.cov(x_prime, rowvar=False)
