@@ -26,6 +26,7 @@ The main entry point for the library is the mcos.py file. The entry points are m
 ## SAMPLE SIMULATION
 
 > #simulate_optimizations
+>
 > obs_sim = MuCovObservationSimulator(expected_returns, covariance, num_sims)  
 > optimizers = [HRPOptimizer(), MarkowitzOptimizer(),NCOOptimizer(max_num_clusters, num_clustering_trials)]   
 > error_estimator = VarianceErrorEstimator()  
@@ -34,7 +35,9 @@ The main entry point for the library is the mcos.py file. The entry points are m
 >    
 > results = mcos.simulate_optimizations(obs_sim, num_sims, optimizers, error_estimator, covariance_transformers)  
 
+
 > #simulate_optimizations_from_price_history
+>
 > optimizers = [HRPOptimizer(), MarkowitzOptimizer(),NCOOptimizer(max_num_clusters, num_clustering_trials)]   
 > error_estimator = VarianceErrorEstimator()  
 > covariance_transformers = [DeNoiserCovarianceTransformer()]  
@@ -47,7 +50,7 @@ The main entry point for the library is the mcos.py file. The entry points are m
 
 ## DATA INPUTS
 
-As mentioned above, when calling mcos.simulate_optimizations() the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. You must also include the number of simulations that you wish to run.
+As mentioned above, when calling mcos.simulate_optimizations() the key input for the system is the expected return vector and covariance of the portfolio that you are trying to analyze. You choose the type of Observation Simulator and initialize it with the covariance and expected returns. Please feed the Simulator only numpy arrays, lest it get cranky and uncooperative. The expected return vector is a 1 dimensional array of expected returns for the portfolio constituents, while the covariance is a n x n matrix. You must also include the number of observations that you wish to run.
 
 
 If you are calling mcos.simulate_optimizations_from_price_history(), expected return vector and covariance are calculate for you. So instead of passing an Observation Simulator object, you would instead pass the price history, the name of the simulator you'd like to run, and the number of observations you'd like make. 
