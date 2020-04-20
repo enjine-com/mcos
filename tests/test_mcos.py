@@ -9,7 +9,7 @@ from mcos.covariance_transformer import DeNoiserCovarianceTransformer
 from mcos.error_estimator import ExpectedOutcomeErrorEstimator, SharpeRatioErrorEstimator, VarianceErrorEstimator
 from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWolfObservationSimulator, \
     MuCovJackknifeObservationSimulator
-from mcos.mcos import simulate_optimizations, simulate_optimization_from_price_history
+from mcos.mcos import simulate_optimizations, simulate_optimizations_from_price_history
 from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer, RiskParityOptimizer
 
 
@@ -163,7 +163,7 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
 def test_simulate_observations_price_history():
     np.random.seed(0)
 
-    df = simulate_optimization_from_price_history(prices_df,
+    df = simulate_optimizations_from_price_history(prices_df,
                                                   'MuCovLedoitWolfObservationSimulator',
                                                   n_observations=3,
                                                   n_sims=3,
