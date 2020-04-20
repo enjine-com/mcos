@@ -5,8 +5,6 @@ from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import sample_cov
 
 from mcos.error_estimator import ExpectedOutcomeErrorEstimator, VarianceErrorEstimator, SharpeRatioErrorEstimator
-from mcos.observation_simulator import MuCovJackknifeObservationSimulator, MuCovObservationSimulator, \
-    MuCovLedoitWolfObservationSimulator
 
 
 class TestErrorEstimator:
@@ -38,18 +36,4 @@ class TestErrorEstimator:
 
         assert_almost_equal(estimation, expected_value)
 
-import pandas as pd
-
-
-def prices_df() -> pd.DataFrame:
-    return pd.read_csv('tests/stock_prices.csv', parse_dates=True, index_col='date')
-
-def test_whatever():
-    prices = prices_df()
-    mu = mean_historical_return(prices).values
-    cov = sample_cov(prices).values
-    mu_hat, cov_hat = MuCovJackknifeObservationSimulator(mu, cov, 50, 50).simulate()
-    mu_hat2, cov_hat2 = MuCovObservationSimulator(mu, cov, 50).simulate()
-    mu_hat3, cov_hat3 = MuCovLedoitWolfObservationSimulator(mu,cov, 50).simulate()
-    print(mu_hat, cov_hat)
 

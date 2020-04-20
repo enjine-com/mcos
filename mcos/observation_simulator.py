@@ -1,8 +1,6 @@
 import numpy as np
 from abc import abstractmethod, ABC
 from sklearn.covariance import LedoitWolf
-from pypfopt.risk_models import sample_cov
-import pandas as pd
 
 
 class AbstractObservationSimulator(ABC):
@@ -44,37 +42,14 @@ class MuCovObservationSimulator(AbstractObservationSimulator):
 
 class MuCovJackknifeObservationSimulator(AbstractObservationSimulator):
 
-    def __init__(self, mu: np.array, cov: np.array, n_observations: int, jackknife_samples):
+    def __init__(self, mu: np.array, cov: np.array, n_observations: int):
         self.mu = mu
         self.cov = cov
         self.n_observations = n_observations
-        self.jackknife_samples = jackknife_samples
 
     def simulate(self) -> (np.array, np.array):
-
-        x = {}
-        for q in range(self.jackknife_samples):
-            x[q] = np.random.multivariate_normal(self.mu.flatten(), self.cov, size=self.n_observations)
-
-        x_prime = None
-        for count in range(x.__len__()):
-            x_total = None
-            # add all of the samples except the current
-            for y in range(x.__len__()):
-                if count != y:
-                    if x_total is None:
-                        x_total = x[y]
-                    else:
-                        x_total = x_total + x[y]
-            # divide by n-1
-            x_total = x_total / (x.__len__() - 1)
-
-            if x_prime is None:
-                x_prime = x_total
-            else:
-                x_prime = x_prime + x_total
-        # take the average of all of the jackknifed results
-        x_prime = x_prime / x.__len__()
-
+        x = np.random.multivariate_normal(self.mu.flatten(), self.cov, size=self.n_observations)
+        idx = np.arange(len(x))
+        x_prime = np.sum(x[idx!=i] for i in range(len(x)))/float(len(x))
         return x_prime.mean(axis=0).reshape(-1, 1), np.cov(x_prime, rowvar=False)
 
