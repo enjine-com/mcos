@@ -8,7 +8,8 @@ from pypfopt.risk_models import sample_cov
 from mcos.covariance_transformer import DeNoiserCovarianceTransformer
 from mcos.error_estimator import ExpectedOutcomeErrorEstimator, SharpeRatioErrorEstimator, VarianceErrorEstimator
 from mcos.mcos import simulate_optimizations
-from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWolfObservationSimulator
+from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWolfObservationSimulator, \
+    MuCovJackknifeObservationSimulator
 from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer, RiskParityOptimizer
 
 
@@ -101,6 +102,48 @@ cov = sample_cov(prices_df).values
         [],
         np.array([0.01897399, 0.02695813, 0.00654766, 0.00203981]),
         np.array([0.00319618, 0.00262264, 0.00095974, 0.00060647])
+    ),
+    (
+        MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
+        ExpectedOutcomeErrorEstimator(),
+        [DeNoiserCovarianceTransformer()],
+        np.array([0.06827604, -0.30484493, -0.04403094, 0.01748054]),
+        np.array([0.05344665, 0.49357764, 0.05370289, 0.00577472])
+    ),
+    (
+        MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
+        ExpectedOutcomeErrorEstimator(),
+        [],
+        np.array([0.038431, -0.23191844, -0.04251357, 0.02497066]),
+        np.array([0.04954174, 0.5436917, 0.04795938, 0.00682956])
+    ),
+    (
+        MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
+        SharpeRatioErrorEstimator(),
+        [DeNoiserCovarianceTransformer()],
+        np.array([0.40579162, -0.05621263, -0.25513818, 0.36452358]),
+        np.array([0.35967809, 0.32615874, 0.33696179, 0.08402888])
+    ),
+    (
+        MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
+        SharpeRatioErrorEstimator(),
+        [],
+        np.array([ 0.14989966, 0.26537828, -0.21846758, 0.36542616]),
+        np.array([0.18190269, 0.40396382, 0.28647687, 0.12610221])
+    ),
+    (
+        MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
+        VarianceErrorEstimator(),
+        [DeNoiserCovarianceTransformer()],
+        np.array([0.03698989, 2.78106467, 0.0229852, 0.0022515]),
+        np.array([0.0222791, 3.8413068, 0.0051956, 0.0006458])
+    ),
+    (
+        MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
+        VarianceErrorEstimator(),
+        [],
+        np.array([0.06061788, 9.0094020, 0.02449243, 0.0054306]),
+        np.array([0.0136079, 12.5318911, 0.01116664, 0.0026347])
     )
 ])
 def test_simulate_observations(simulator, estimator, transformers, expected_mean, expected_stdev):
@@ -114,3 +157,4 @@ def test_simulate_observations(simulator, estimator, transformers, expected_mean
 
     assert_almost_equal(df['mean'].values, expected_mean, decimal=1)
     assert_almost_equal(df['stdev'].values, expected_stdev, decimal=1)
+
