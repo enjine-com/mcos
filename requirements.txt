@@ -1,7 +1,7 @@
 joblib==0.14.1
 numpy==1.18.1
 pandas==0.25.3
-pre-commit==2.2.1
+pre-commit==2.2.0
 PyPortfolioOpt==0.5.2
 pytest==5.3.3
 python-dateutil==2.8.1
@@ -9,3 +9,4 @@ pytz==2019.3
 scikit-learn==0.22.1
 scipy==1.4.1
 six==1.13.0
+jupyter==1.0.0
