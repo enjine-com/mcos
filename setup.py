@@ -18,7 +18,9 @@ setup(
   install_requires=[
     'numpy',
     'pandas',
-    'PyPortfolioOpt'
+    'PyPortfolioOpt',
+    'matplotlib',
+    'scikit-learn'
   ],
   classifiers=[
     'Development Status :: 3 - Alpha',
