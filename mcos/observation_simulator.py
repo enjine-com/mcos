@@ -10,7 +10,7 @@ class AbstractObservationSimulator(ABC):
         """
         Draws empirical means and covariances. See section 4.1 of the "A Robust Estimator of the Efficient Frontier"
         paper.
-        :param n_observations:
+        :param n_observations: number of observations
         @return: Tuple of expected return vector and covariance matrix
         """
         pass
