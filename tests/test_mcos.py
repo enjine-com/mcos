@@ -7,9 +7,10 @@ from pypfopt.risk_models import sample_cov
 
 from mcos.covariance_transformer import DeNoiserCovarianceTransformer
 from mcos.error_estimator import ExpectedOutcomeErrorEstimator, SharpeRatioErrorEstimator, VarianceErrorEstimator
-from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWolfObservationSimulator, \
-    MuCovJackknifeObservationSimulator
 from mcos.mcos import simulate_optimizations, simulate_optimizations_from_price_history
+from mcos.observation_simulator import MuCovObservationSimulator, MuCovLedoitWolfObservationSimulator,\
+    MuCovJackknifeObservationSimulator
+
 from mcos.optimizer import HRPOptimizer, MarkowitzOptimizer, NCOOptimizer, RiskParityOptimizer
 
 
