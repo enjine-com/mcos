@@ -53,7 +53,7 @@ class MuCovJackknifeObservationSimulator(AbstractObservationSimulator):
         x_prime = []
 
         for i in range(len(x)):
-            x_prime.append((np.sum(x, axis=0) - x[i]) / (len(x)-1))
+            x_prime.append((np.sum(x, axis=0) - x[i]))
 
-        return np.asarray(x_prime).mean(axis=0).reshape(-1, 1), np.cov(np.asarray(x_prime), rowvar=False)
-
+        return (np.asarray(x_prime) / (self.n_observations - 1)).mean(axis=0).reshape(-1, 1),\
+               np.cov(np.asarray(x_prime), rowvar=False)

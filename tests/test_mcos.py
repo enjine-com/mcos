@@ -122,29 +122,29 @@ cov = sample_cov(prices_df).values
         MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.4408612, 0.3203, -0.3533532, -0.2138923]),
-        np.array([0.1560855, 0.165637, 0.0345136, 0.2754449])
+        np.array([0.4408612, 0.3203011, -0.3533532, 0.1512333]),
+        np.array([0.1560855, 0.1656371, 0.0345136, 0.2754449])
     ),
     (
         MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
         SharpeRatioErrorEstimator(),
         [],
-        np.array([0.2260078, 0.12612, -0.2404617, -0.1332855]),
-        np.array([0.2801774, 0.3878638, 0.1683722, 0.2686858])
+        np.array([0.2260078, 0.12612, -0.2404617, -0.0070411]),
+        np.array([0.2801774, 0.3878638, 0.1683722, 0.1489612])
     ),
     (
         MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [DeNoiserCovarianceTransformer()],
-        np.array([0.0344775, 0.0384286, 0.0100114, 0.001123]),
-        np.array([0.0172106, 0.0161673, 0.0034079, 0.0002323])
+        np.array([0.0344775, 0.0384286, 0.0100114, 0.0020701]),
+        np.array([0.0172106, 0.0161673, 0.0034079, 0.0006801])
     ),
     (
         MuCovJackknifeObservationSimulator(mu, cov, n_observations=5),
         VarianceErrorEstimator(),
         [],
-        np.array([0.0483942, 1.5862064, 0.0201481, 0.0012496]),
-        np.array([0.0091569, 1.7915452, 0.0042452, 0.0003093])
+        np.array([0.056601, 1.5862064, 0.0201481, 0.0066681]),
+        np.array([0.0105761, 1.7915452, 0.0042452, 0.0041911])
     )
 ])
 def test_simulate_observations(simulator, estimator, transformers, expected_mean, expected_stdev):
