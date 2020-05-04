@@ -50,10 +50,8 @@ class MuCovJackknifeObservationSimulator(AbstractObservationSimulator):
     def simulate(self) -> (np.array, np.array):
         x = np.random.multivariate_normal(self.mu.flatten(), self.cov, size=self.n_observations)
 
-        x_prime = []
+        idx = np.arange(len(x))
+        cov_hat = np.sum(np.cov(x[idx!=i], rowvar=False) for i in range(len(x)))/float(len(x) - 1)
+        x_prime = np.sum(x[idx!=i] for i in range(len(x)))/float(len(x) - 1)
 
-        for i in range(len(x)):
-            x_prime.append((np.sum(x, axis=0) - x[i]))
-
-        return (np.asarray(x_prime) / (self.n_observations - 1)).mean(axis=0).reshape(-1, 1),\
-               np.cov(np.asarray(x_prime), rowvar=False)
+        return x_prime.mean(axis=0).reshape(-1, 1), cov_hat
