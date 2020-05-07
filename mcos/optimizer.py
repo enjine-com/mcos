@@ -216,7 +216,8 @@ class HRPOptimizer(AbstractOptimizer):
         link = sch.linkage(dist, 'single')  # this step also calculates the Euclidean distance of 'dist'
 
         sorted_indices = self._quasi_diagonal_cluster_sequence(link)
-        ret = self._hrp_weights(cov, sorted_indices)
+        ret = self._recursive_bisection(cov, sorted_indices)
+
         if ret.sum() > 1.001 or ret.sum() < 0.999:
             raise ValueError("Portfolio allocations don't sum to 1.")
 
@@ -277,6 +278,28 @@ class HRPOptimizer(AbstractOptimizer):
             np.multiply(self._hrp_weights(cov, split_indices[0]), alloc_factor),
             np.multiply(self._hrp_weights(cov, split_indices[1]), 1. - alloc_factor)
         ])
+
+    def _recursive_bisection(self,cov: np.ndarray, sorted_indices: List) -> np.ndarray:
+        weights = pd.Series(1, index=sorted_indices)
+        clusters = [sorted_indices]
+
+        while len(clusters) > 0:
+            clusters = [cluster[start:end]
+                                for cluster in clusters
+                                for start, end in ((0, len(cluster) // 2), (len(cluster) // 2, len(cluster)))
+                                if len(cluster) > 1]
+
+            for x in range(0, len(clusters), 2):
+                left_var = self._cluster_var(pd.DataFrame(cov).iloc[clusters[x], clusters[x]])
+                right_var = self._cluster_var(pd.DataFrame(cov).iloc[clusters[x+1], clusters[x+1]])
+                alpha = 1-left_var/(left_var+right_var)
+                weights[clusters[x]] *= alpha
+                weights[clusters[x+1]] *= 1 - alpha
+
+        # change to original order
+        weights = sorted(zip(weights, sorted_indices), key=lambda x:x[1])
+
+        return np.array([x[0] for x in weights])
 
     def _correlation_distance(self, corr: np.ndarray) -> np.ndarray:
         # A distance matrix based on correlation, where 0<=d[i,j]<=1
