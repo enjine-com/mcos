@@ -132,31 +132,3 @@ def test_simulate_observations_price_history():
 
     assert_almost_equal(df['mean'].values, np.array([0.0467513, 0.0676277, -0.0181564, -0.0078399]))
     assert_almost_equal(df['stdev'].values, np.array([0.0386170, 0.0372161, 0.0098585, 0.00666344]))
-
-
-from mlfinlab.portfolio_optimization import NCO
-from mlfinlab.portfolio_optimization.hrp import HierarchicalRiskParity
-def test_whatever():
-    num_sims = 50
-
-    op = [optimizer.HRPOptimizer(), optimizer.MarkowitzOptimizer(),optimizer.NCOOptimizer(), optimizer.RiskParityOptimizer()]
-    cov_trans = DeNoiserCovarianceTransformer()
-
-    mu = mean_historical_return(prices_df()).values
-    cov = sample_cov(prices_df()).values
-    obs_sim = MuCovLedoitWolfObservationSimulator(mu, cov, num_sims)
-
-
-    ophrp = optimizer.HRPOptimizer()
-    opmark = optimizer.MarkowitzOptimizer()
-    opnco = optimizer.NCOOptimizer()
-    oprp = optimizer.RiskParityOptimizer()
-
-    weights_hrp = ophrp.allocate(mu, cov)
-    weights_hrp_lib = HierarchicalRiskParity().allocate(cov, mu)
-    weights_mark = opmark.allocate(mu, cov)
-    weights_nco = opnco.allocate(mu, cov)
-    weights_nco_lib = NCO().allocate_nco(cov, mu)
-    weights_rp = oprp.allocate(mu, cov)
-
-    print(weights_hrp)
