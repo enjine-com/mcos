@@ -42,7 +42,7 @@ def simulate_optimizations(
     ]).set_index('optimizer')
 
 
-def simulate_optimization_from_price_history(
+def simulate_optimizations_from_price_history(
         price_history: pd.DataFrame,
         simulator_name: str,
         n_observations:int,
