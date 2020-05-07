@@ -35,3 +35,5 @@ class TestErrorEstimator:
         estimation = estimator.estimate(mu, cov, allocation, optimal_allocation)
 
         assert_almost_equal(estimation, expected_value)
+
+

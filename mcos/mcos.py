@@ -5,7 +5,7 @@ from typing import List
 from mcos.covariance_transformer import AbstractCovarianceTransformer
 from mcos.error_estimator import AbstractErrorEstimator
 from mcos.observation_simulator import AbstractObservationSimulator, MuCovLedoitWolfObservationSimulator, \
-    MuCovObservationSimulator
+    MuCovObservationSimulator, MuCovJackknifeObservationSimulator
 from mcos.optimizer import AbstractOptimizer
 from mcos.utils import convert_price_history
 
@@ -54,8 +54,10 @@ def simulate_optimizations_from_price_history(
 
     if simulator_name.lower() == "mucovledoitwolf":
         sim = MuCovLedoitWolfObservationSimulator(mu, cov, n_observations)
-    elif simulator_name == "mucov":
+    elif simulator_name.lower() == "mucov":
         sim = MuCovObservationSimulator(mu, cov, n_observations)
+    elif simulator_name.lower() == "jackknife":
+        sim = MuCovJackknifeObservationSimulator(mu, cov, n_observations)
     else:
         raise ValueError("Invalid observation simulator name")
 

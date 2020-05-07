@@ -60,7 +60,8 @@ The observation simulators that are currently supported are:
 1. Standard - The chicken fingers of simulators. Plain, unexciting, but darn it, it gets the job done. Regular estimation of the covariance matrix. For simulate_optimizations_from_price_history calls, pass "MuCov" as the simulator name. 
 
 2. Ledoit-Wolf - If you prefer your covariance matrix shrunken, this is the one for you. Read all about it in this [unfortunately titled paper](http://www.ledoit.net/honey.pdf). For simulate_optimizations_from_price_history calls, pass "MuCovLedoitWolf" as the simulator name
-  
+
+3. Jackknife Resample - Use basic jackknife resampling to create simulated covariance matrices. A little spice to the ordinary. For simulate_optimizations_from_price_history calls, pass 'Jackknife' as the simulator name
 
 
 ## CONFIGURATION INPUTS
