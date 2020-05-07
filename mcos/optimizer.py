@@ -216,8 +216,7 @@ class HRPOptimizer(AbstractOptimizer):
         link = sch.linkage(dist, 'single')  # this step also calculates the Euclidean distance of 'dist'
 
         sorted_indices = self._quasi_diagonal_cluster_sequence(link)
-        ret = self._recursive_bisection(cov, sorted_indices)
-
+        ret = self._hrp_weights(cov, sorted_indices)
         if ret.sum() > 1.001 or ret.sum() < 0.999:
             raise ValueError("Portfolio allocations don't sum to 1.")
 
@@ -254,32 +253,20 @@ class HRPOptimizer(AbstractOptimizer):
         w_ = self._inverse_variance_weights(cov).reshape(-1, 1)
         return np.dot(np.dot(w_.T, cov), w_)[0, 0]
 
-    def _hrp_weights(self, cov: np.ndarray, sorted_indices: List) -> np.ndarray:
+    def _hrp_weights(self,cov: np.ndarray, sorted_indices: List) -> np.ndarray:
         """
-        Gets position weights using hierarchical risk parity
-        :param cov: covariance matrix
-        :param sorted_indices: clustering scheme
-        :return: array of position weights
-        """
+      Gets position weights using hierarchical risk parity
+      :param cov: covariance matrix
+      :param sorted_indices: clustering scheme
+      :return: array of position weights, sorted to match the original order passed
+      """
+
         if len(sorted_indices) == 0:
             raise ValueError('sorted_indices is empty')
 
         if len(sorted_indices) == 1:
             return np.array([1.])
 
-        split_indices = np.array_split(np.array(sorted_indices), 2)
-
-        left_var = self._cluster_var(cov[:, split_indices[0]][split_indices[0]])
-        right_var = self._cluster_var(cov[:, split_indices[1]][split_indices[1]])
-
-        alloc_factor = 1. - left_var / (left_var + right_var)
-
-        return np.concatenate([
-            np.multiply(self._hrp_weights(cov, split_indices[0]), alloc_factor),
-            np.multiply(self._hrp_weights(cov, split_indices[1]), 1. - alloc_factor)
-        ])
-
-    def _recursive_bisection(self,cov: np.ndarray, sorted_indices: List) -> np.ndarray:
         weights = pd.Series(1, index=sorted_indices)
         clusters = [sorted_indices]
 
