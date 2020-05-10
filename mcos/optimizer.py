@@ -6,7 +6,6 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
-from numpy.linalg import inv, pinv
 from pypfopt.efficient_frontier import EfficientFrontier
 from scipy.optimize import minimize
 from sklearn.cluster import KMeans
@@ -217,10 +216,14 @@ class HRPOptimizer(AbstractOptimizer):
 
         sorted_indices = self._quasi_diagonal_cluster_sequence(link)
         ret = self._hrp_weights(cov, sorted_indices)
+
         if ret.sum() > 1.001 or ret.sum() < 0.999:
             raise ValueError("Portfolio allocations don't sum to 1.")
 
-        return ret
+        # change to original order
+        ret = sorted(zip(ret, sorted_indices), key=lambda x:x[1])
+
+        return np.array([x[0] for x in ret])
 
     @property
     def name(self) -> str:
@@ -253,40 +256,34 @@ class HRPOptimizer(AbstractOptimizer):
         w_ = self._inverse_variance_weights(cov).reshape(-1, 1)
         return np.dot(np.dot(w_.T, cov), w_)[0, 0]
 
-    def _hrp_weights(self,cov: np.ndarray, sorted_indices: List) -> np.ndarray:
-        """
-      Gets position weights using hierarchical risk parity
-      :param cov: covariance matrix
-      :param sorted_indices: clustering scheme
-      :return: array of position weights, sorted to match the original order passed
-      """
 
+    def _hrp_weights(self, cov: np.ndarray, sorted_indices: List) -> np.ndarray:
+        """
+        Gets position weights using hierarchical risk parity
+        :param cov: covariance matrix
+        :param sorted_indices: clustering scheme
+        :return: array of position weights
+        """
         if len(sorted_indices) == 0:
             raise ValueError('sorted_indices is empty')
 
         if len(sorted_indices) == 1:
             return np.array([1.])
 
-        weights = pd.Series(1, index=sorted_indices)
-        clusters = [sorted_indices]
+        split_indices =  [cluster[start:end]
+                                     for cluster in [sorted_indices]
+                                     for start, end in ((0, len(cluster) // 2), (len(cluster) // 2, len(cluster)))
+                                     if len(cluster) > 1]
 
-        while len(clusters) > 0:
-            clusters = [cluster[start:end]
-                                for cluster in clusters
-                                for start, end in ((0, len(cluster) // 2), (len(cluster) // 2, len(cluster)))
-                                if len(cluster) > 1]
+        left_var = self._cluster_var(cov[:, split_indices[0]][split_indices[0]])
+        right_var = self._cluster_var(cov[:, split_indices[1]][split_indices[1]])
 
-            for x in range(0, len(clusters), 2):
-                left_var = self._cluster_var(pd.DataFrame(cov).iloc[clusters[x], clusters[x]])
-                right_var = self._cluster_var(pd.DataFrame(cov).iloc[clusters[x+1], clusters[x+1]])
-                alpha = 1-left_var/(left_var+right_var)
-                weights[clusters[x]] *= alpha
-                weights[clusters[x+1]] *= 1 - alpha
+        alloc_factor = 1. - left_var / (left_var + right_var)
 
-        # change to original order
-        weights = sorted(zip(weights, sorted_indices), key=lambda x:x[1])
-
-        return np.array([x[0] for x in weights])
+        return np.concatenate([
+            np.multiply(self._hrp_weights(cov, split_indices[0]), alloc_factor),
+            np.multiply(self._hrp_weights(cov, split_indices[1]), 1. - alloc_factor)
+        ])
 
     def _correlation_distance(self, corr: np.ndarray) -> np.ndarray:
         # A distance matrix based on correlation, where 0<=d[i,j]<=1
