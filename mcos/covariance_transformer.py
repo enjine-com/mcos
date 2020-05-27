@@ -1,8 +1,21 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from numpy import linalg
 from sklearn.neighbors import KernelDensity
 from scipy.optimize import minimize
 import pandas as pd
+
+
+def cov_to_corr(cov: np.array) -> np.array:
+    """
+    Derive the correlation matrix from a covariance matrix
+    :param cov: covariance matrix
+    :return: correlation matrix
+    """
+    std = np.sqrt(np.diag(cov))
+    corr = cov / np.outer(std, std)
+    corr[corr < -1], corr[corr > 1] = -1, 1  # numerical error
+    return corr
 
 
 class AbstractCovarianceTransformer(ABC):
@@ -188,13 +201,28 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         return cov
 
 
-def cov_to_corr(cov: np.array) -> np.array:
-    """
-    Derive the correlation matrix from a covariance matrix
-    :param cov: covariance matrix
-    :return: correlation matrix
-    """
-    std = np.sqrt(np.diag(cov))
-    corr = cov / np.outer(std, std)
-    corr[corr < -1], corr[corr > 1] = -1, 1  # numerical error
-    return corr
+class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
+    def __init__(self, n_remove: int):
+        """
+        Removes the largest eigenvalue/eigenvector pairs from the covariance matrix. Since the largest eigenvalues are
+        typically associated with the market component, removing such eigenvalues has the effect of removing the
+        market's influence on the correlations between securities. See chapter 2.6 of "Machine Learning for Asset
+        Managers".
+        :param n_remove: The number of the largest eigenvalues to remove
+        """
+        self.n_remove = n_remove
+
+    def transform(self, cov: np.array, n_observations: int) -> np.array:
+        w, v = linalg.eig(cov)
+
+        v_market = v[:, 0:self.n_remove]  # largest eigenvectors
+        w_market = w[0:self.n_remove]
+
+        market_comp = np.matmul(
+            np.matmul(v_market, w_market).reshape((v.shape[0], self.n_remove,)),
+            np.transpose(v_market)
+        )
+
+        c2 = cov - market_comp
+
+        return c2
