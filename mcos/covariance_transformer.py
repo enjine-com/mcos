@@ -18,6 +18,23 @@ def cov_to_corr(cov: np.array) -> np.array:
     return corr
 
 
+def corr_to_cov(corr: np.array, std: np.array) -> np.array:
+    """
+    Recovers the covariance matrix from the de-noise correlation matrix
+    :param corr: de-noised correlation matrix
+    :param std: standard deviation of the correlation matrix
+    :return: a recovered covariance matrix
+    """
+    cov = corr * np.outer(std, std)
+    return cov
+
+
+def reorder_matrix(m: np.array, sort_index: np.array) -> np.array:
+    m = m[sort_index, :]
+    m = m[:, sort_index]
+    return m
+
+
 class AbstractCovarianceTransformer(ABC):
     """
     Abstract class for transforming a covariance matrix
@@ -76,7 +93,7 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         correlation_matrix = self._de_noised_corr(eigenvalues, eigenvectors, n_facts)
 
         # recover covariance matrix from correlation matrix
-        de_noised_covariance_matrix = self._corr_to_cov(correlation_matrix, np.diag(cov) ** .5)
+        de_noised_covariance_matrix = corr_to_cov(correlation_matrix, np.diag(cov) ** .5)
         return de_noised_covariance_matrix
 
     def _get_PCA(self, matrix: np.array) -> (np.array, np.array):
@@ -190,16 +207,6 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         corr = cov_to_corr(corr)
         return corr
 
-    def _corr_to_cov(self, corr: np.array, std: np.array) -> np.array:
-        """
-        Recovers the covariance matrix from the de-noise correlation matrix
-        :param corr: de-noised correlation matrix
-        :param std: standard deviation of the correlation matrix
-        :return: a recovered covariance matrix
-        """
-        cov = corr * np.outer(std, std)
-        return cov
-
 
 class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
     def __init__(self, n_remove: int):
@@ -216,8 +223,17 @@ class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
         if self.n_remove == 0:
             return cov
 
-        w, v = linalg.eig(cov)
+        corr = cov_to_corr(cov)
 
+        w, v = linalg.eig(corr)
+
+        # sort from highest eigenvalues to lowest
+        sort_index = np.argsort(-np.abs(w))  # get sort_index in descending absolute order - i.e. from most significant
+        w = w[sort_index]
+        v = reorder_matrix(v, sort_index)
+        corr = reorder_matrix(corr, sort_index)
+
+        # remove largest eigenvalue component
         v_market = v[:, 0:self.n_remove]  # largest eigenvectors
         w_market = w[0:self.n_remove]
 
@@ -226,6 +242,13 @@ class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
             np.transpose(v_market)
         )
 
-        c2 = cov - market_comp
+        c2 = corr - market_comp
 
-        return c2 / np.trace(c2)
+        # normalize the correlation matrix so the diagonals are 1
+        norm_vector = np.diag(1. / c2.diagonal() ** 0.5)
+        c2 = np.matmul(np.matmul(norm_vector, c2), np.transpose(norm_vector))
+
+        # change back to original order and revert to covariance matrix
+        reverse_sort_index = np.argsort(sort_index)
+        c2 = reorder_matrix(c2, reverse_sort_index)
+        return corr_to_cov(c2, np.diag(cov) ** .5)
