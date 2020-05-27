@@ -230,8 +230,7 @@ class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
         # sort from highest eigenvalues to lowest
         sort_index = np.argsort(-np.abs(w))  # get sort_index in descending absolute order - i.e. from most significant
         w = w[sort_index]
-        v = reorder_matrix(v, sort_index)
-        corr = reorder_matrix(corr, sort_index)
+        v = v[:, sort_index]
 
         # remove largest eigenvalue component
         v_market = v[:, 0:self.n_remove]  # largest eigenvectors
@@ -248,7 +247,4 @@ class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
         norm_matrix = np.diag(c2.diagonal() ** -0.5)
         c2 = np.matmul(np.matmul(norm_matrix, c2), np.transpose(norm_matrix))
 
-        # change back to original order and revert to covariance matrix
-        reverse_sort_index = np.argsort(sort_index)
-        c2 = reorder_matrix(c2, reverse_sort_index)
         return corr_to_cov(c2, np.diag(cov) ** .5)
