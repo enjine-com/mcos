@@ -1,7 +1,46 @@
 import pytest
-from mcos.covariance_transformer import DeNoiserCovarianceTransformer, cov_to_corr
-from numpy.testing import assert_almost_equal
+from numpy import linalg
+
+from mcos.covariance_transformer import DeNoiserCovarianceTransformer, cov_to_corr, DetoneCovarianceTransformer
+from numpy.testing import assert_almost_equal, assert_array_almost_equal
 from pypfopt.risk_models import sample_cov
+import numpy as np
+
+
+@pytest.fixture
+def cov_matrix():
+    stdevs = np.array([0.8, 1.2, 0.5])
+    stdev_matrix = np.diag(stdevs)
+    correlations = np.array([
+        [1.0, -0.5, 0.],
+        [-0.5, 1.0, 0.2],
+        [0., 0.2, 1.0],
+    ])
+
+    return np.dot(np.dot(stdev_matrix, correlations), np.transpose(stdev_matrix))
+
+@pytest.fixture
+def detoned_results():
+    return np.array([
+        [0.64, 0.737716, 0.193364],
+        [0.737716, 1.44, -0.113214],
+        [0.193364, -0.113214, 0.25],
+    ])
+
+
+class TestDetoneCovarianceTransformer:
+    def test_transform(self, cov_matrix, detoned_results):
+        results = DetoneCovarianceTransformer(n_remove=1).transform(cov_matrix, None)
+
+        assert_array_almost_equal(results, detoned_results)
+
+        w, v = linalg.eig(results)
+        sort_index = np.argsort(-np.abs(w))
+
+        assert_almost_equal(w[sort_index][-1], 0.)
+
+        results = DetoneCovarianceTransformer(n_remove=0).transform(cov_matrix, None)
+        assert_array_almost_equal(results, cov_matrix)
 
 
 class TestDeNoiserCovarianceTransformer:

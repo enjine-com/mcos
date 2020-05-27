@@ -1,8 +1,38 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from numpy import linalg
 from sklearn.neighbors import KernelDensity
 from scipy.optimize import minimize
 import pandas as pd
+
+
+def cov_to_corr(cov: np.array) -> np.array:
+    """
+    Derive the correlation matrix from a covariance matrix
+    :param cov: covariance matrix
+    :return: correlation matrix
+    """
+    std = np.sqrt(np.diag(cov))
+    corr = cov / np.outer(std, std)
+    corr[corr < -1], corr[corr > 1] = -1, 1  # numerical error
+    return corr
+
+
+def corr_to_cov(corr: np.array, std: np.array) -> np.array:
+    """
+    Recovers the covariance matrix from the de-noise correlation matrix
+    :param corr: de-noised correlation matrix
+    :param std: standard deviation of the correlation matrix
+    :return: a recovered covariance matrix
+    """
+    cov = corr * np.outer(std, std)
+    return cov
+
+
+def reorder_matrix(m: np.array, sort_index: np.array) -> np.array:
+    m = m[sort_index, :]
+    m = m[:, sort_index]
+    return m
 
 
 class AbstractCovarianceTransformer(ABC):
@@ -63,7 +93,7 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         correlation_matrix = self._de_noised_corr(eigenvalues, eigenvectors, n_facts)
 
         # recover covariance matrix from correlation matrix
-        de_noised_covariance_matrix = self._corr_to_cov(correlation_matrix, np.diag(cov) ** .5)
+        de_noised_covariance_matrix = corr_to_cov(correlation_matrix, np.diag(cov) ** .5)
         return de_noised_covariance_matrix
 
     def _get_PCA(self, matrix: np.array) -> (np.array, np.array):
@@ -177,24 +207,44 @@ class DeNoiserCovarianceTransformer(AbstractCovarianceTransformer):
         corr = cov_to_corr(corr)
         return corr
 
-    def _corr_to_cov(self, corr: np.array, std: np.array) -> np.array:
-        """
-        Recovers the covariance matrix from the de-noise correlation matrix
-        :param corr: de-noised correlation matrix
-        :param std: standard deviation of the correlation matrix
-        :return: a recovered covariance matrix
-        """
-        cov = corr * np.outer(std, std)
-        return cov
 
+class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
+    def __init__(self, n_remove: int):
+        """
+        Removes the largest eigenvalue/eigenvector pairs from the covariance matrix. Since the largest eigenvalues are
+        typically associated with the market component, removing such eigenvalues has the effect of removing the
+        market's influence on the correlations between securities. See chapter 2.6 of "Machine Learning for Asset
+        Managers".
+        :param n_remove: The number of the largest eigenvalues to remove
+        """
+        self.n_remove = n_remove
 
-def cov_to_corr(cov: np.array) -> np.array:
-    """
-    Derive the correlation matrix from a covariance matrix
-    :param cov: covariance matrix
-    :return: correlation matrix
-    """
-    std = np.sqrt(np.diag(cov))
-    corr = cov / np.outer(std, std)
-    corr[corr < -1], corr[corr > 1] = -1, 1  # numerical error
-    return corr
+    def transform(self, cov: np.array, n_observations: int) -> np.array:
+        if self.n_remove == 0:
+            return cov
+
+        corr = cov_to_corr(cov)
+
+        w, v = linalg.eig(corr)
+
+        # sort from highest eigenvalues to lowest
+        sort_index = np.argsort(-np.abs(w))  # get sort_index in descending absolute order - i.e. from most significant
+        w = w[sort_index]
+        v = v[:, sort_index]
+
+        # remove largest eigenvalue component
+        v_market = v[:, 0:self.n_remove]  # largest eigenvectors
+        w_market = w[0:self.n_remove]
+
+        market_comp = np.matmul(
+            np.matmul(v_market, w_market).reshape((v.shape[0], self.n_remove,)),
+            np.transpose(v_market)
+        )
+
+        c2 = corr - market_comp
+
+        # normalize the correlation matrix so the diagonals are 1
+        norm_matrix = np.diag(c2.diagonal() ** -0.5)
+        c2 = np.matmul(np.matmul(norm_matrix, c2), np.transpose(norm_matrix))
+
+        return corr_to_cov(c2, np.diag(cov) ** .5)
