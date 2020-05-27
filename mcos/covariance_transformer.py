@@ -245,8 +245,8 @@ class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
         c2 = corr - market_comp
 
         # normalize the correlation matrix so the diagonals are 1
-        norm_vector = np.diag(c2.diagonal() ** -0.5)
-        c2 = np.matmul(np.matmul(norm_vector, c2), np.transpose(norm_vector))
+        norm_matrix = np.diag(c2.diagonal() ** -0.5)
+        c2 = np.matmul(np.matmul(norm_matrix, c2), np.transpose(norm_matrix))
 
         # change back to original order and revert to covariance matrix
         reverse_sort_index = np.argsort(sort_index)
