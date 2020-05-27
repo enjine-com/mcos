@@ -22,9 +22,9 @@ def cov_matrix():
 @pytest.fixture
 def detoned_results():
     return np.array([
-        [0.34468448, 0.15562367, 0.05359653],
-        [0.15562367, 0.07191257, 0.00464127],
-        [0.05359653, 0.00464127, 0.24027282],
+        [0.524738, 0.236917, 0.081594],
+        [0.236917, 0.109478, 0.007066],
+        [0.081594, 0.007066, 0.365785],
     ])
 
 
@@ -37,6 +37,9 @@ class TestDetoneCovarianceTransformer:
         w, v = linalg.eig(results)
 
         assert_almost_equal(w[0], 0.)
+
+        results = DetoneCovarianceTransformer(n_remove=0).transform(cov_matrix, None)
+        assert_array_almost_equal(results, cov_matrix)
 
 
 class TestDeNoiserCovarianceTransformer:

@@ -213,6 +213,9 @@ class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
         self.n_remove = n_remove
 
     def transform(self, cov: np.array, n_observations: int) -> np.array:
+        if self.n_remove == 0:
+            return cov
+
         w, v = linalg.eig(cov)
 
         v_market = v[:, 0:self.n_remove]  # largest eigenvectors
@@ -225,4 +228,4 @@ class DetoneCovarianceTransformer(AbstractCovarianceTransformer):
 
         c2 = cov - market_comp
 
-        return c2
+        return c2 / np.trace(c2)
