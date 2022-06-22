@@ -1,5 +1,5 @@
 joblib==0.14.1
-numpy==1.18.1
+numpy==1.22.0
 pandas==0.25.3
 pre-commit==2.2.0
 PyPortfolioOpt==0.5.2
